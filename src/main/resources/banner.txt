@@ -1,0 +1,12 @@
+
+
+  _                            _     _       _
+ | |    ___   ___  _ __ ___   | |   (_)_ __ | | __
+ | |   / _ \ / _ \| '_ ` _ \  | |   | | '_ \| |/ /
+ | |__| (_) | (_) | | | | | | | |___| | | | |   <
+ |_____\___/ \___/|_| |_| |_| |_____|_|_| |_|_|\_\
+
+  Sovereign Intelligence Layer v${application.version}
+  Nordic Energy Matchbox 2026 | Challenge 01
+  100% Local Execution | Zero Data Egress
+

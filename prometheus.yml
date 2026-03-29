@@ -1,0 +1,16 @@
+# Loom Link — Prometheus Scrape Configuration
+# Scrapes Spring Boot Actuator metrics from the Edge service
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'loom-link-edge'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['loom-edge:8080']
+        labels:
+          application: 'loom-link'
+          environment: 'sovereign'
+          node: 'hm90'

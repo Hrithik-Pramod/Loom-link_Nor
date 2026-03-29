@@ -1,0 +1,26 @@
+# ═══════════════════════════════════════════════════════════════════════
+# LOCAL DEV PROFILE — H2 in-memory database
+# Use when PostgreSQL is not available: --spring.profiles.active=local
+# ═══════════════════════════════════════════════════════════════════════
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:experience_bank;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+
+# Disable API key auth for local development
+loomlink:
+  security:
+    api-key-enabled: false

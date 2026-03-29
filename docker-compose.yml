@@ -1,0 +1,119 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# LOOM LINK — Sovereign Node Docker Compose
+# Nordic Energy Matchbox 2026 | Challenge 01: Maintenance Optimization
+#
+# Full sovereign stack on HM90 (192.168.29.152):
+#   PostgreSQL + pgvector  → Experience Bank (semantic cache, audit trail)
+#   Loom Link Edge         → Spring Boot pipeline (classification, gate, SAP)
+#   Prometheus             → Metrics scraping for observability
+#
+# Deploy:
+#   docker compose up -d
+#   docker compose ps
+#   docker compose logs -f loom-edge
+#
+# Dashboard: http://192.168.29.152:8080
+# Swagger:   http://192.168.29.152:8080/swagger-ui.html
+# Metrics:   http://192.168.29.152:8080/actuator/prometheus
+# ═══════════════════════════════════════════════════════════════════════════════
+
+services:
+
+  # ── Experience Bank — PostgreSQL + pgvector ────────────────────────────────
+  loom-postgres:
+    image: ankane/pgvector:latest
+    container_name: loom-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-industrial_grade_security}
+      POSTGRES_DB: ${POSTGRES_DB:-loom_link}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d loom_link"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    networks:
+      - loom-net
+
+  # ── Loom Link Edge — Sovereign Intelligence Layer ─────────────────────────
+  loom-edge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: loom-link-edge:0.1.0
+    container_name: loom-edge
+    environment:
+      # Database (connects to loom-postgres service)
+      SPRING_DATASOURCE_URL: jdbc:postgresql://loom-postgres:5432/loom_link
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-industrial_grade_security}
+      # LLM — Ollama on HM90 host (accessible via host network)
+      LOOMLINK_LLM_BASE_URL: ${OLLAMA_URL:-http://host.docker.internal:11434}
+      LOOMLINK_LLM_MODEL_ID: ${LLM_MODEL:-mistral:7b}
+      LOOMLINK_LLM_TIMEOUT_SECONDS: 120
+      LOOMLINK_LLM_TEMPERATURE: 0.1
+      # Gate configuration
+      LOOMLINK_REFLECTOR_GATE_CONFIDENCE_THRESHOLD: 0.85
+      # SAP simulation (0.0 = never fail for demo)
+      LOOMLINK_SAP_SIMULATED_FAILURE_RATE: 0.0
+      # Demo mode (toggle via API at runtime)
+      LOOMLINK_DEMO_MODE_ENABLED: ${DEMO_MODE:-false}
+      # JVM tuning for HM90
+      JAVA_OPTS: "-Xms512m -Xmx2g -XX:+UseG1GC"
+    ports:
+      - "8080:8080"
+    depends_on:
+      loom-postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 3G
+    networks:
+      - loom-net
+
+  # ── Prometheus — Metrics Scraping ─────────────────────────────────────────
+  loom-prometheus:
+    image: prom/prometheus:latest
+    container_name: loom-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      loom-edge:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    networks:
+      - loom-net
+    profiles:
+      - monitoring
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  loom-net:
+    driver: bridge
+    name: loom-sovereign-net

@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loom Link — Sovereign Intelligence Layer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --border: #2d3748;
+            --text-primary: #f0f4f8;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+        /* ── Header ─────────────────────────────────────────────── */
+        .header {
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, #0f172a 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .logo {
+            font-size: 24px; font-weight: 700;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .header-badge {
+            padding: 4px 12px; border-radius: 20px; font-size: 11px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .badge-sovereign { background: rgba(16,185,129,0.15); color: var(--accent-green); border: 1px solid rgba(16,185,129,0.3); }
+        .badge-challenge { background: rgba(59,130,246,0.15); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.3); }
+        .header-right { display: flex; align-items: center; gap: 20px; }
+        .status-indicator {
+            display: flex; align-items: center; gap: 8px; font-size: 13px;
+            color: var(--text-secondary);
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .status-dot.live { background: var(--accent-green); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+        /* ── Layout ─────────────────────────────────────────────── */
+        .main { display: grid; grid-template-columns: 300px 1fr; min-height: calc(100vh - 64px); }
+        .sidebar {
+            background: var(--bg-secondary); border-right: 1px solid var(--border);
+            padding: 20px; overflow-y: auto;
+        }
+        .content { padding: 24px; overflow-y: auto; }
+
+        /* ── Cards ──────────────────────────────────────────────── */
+        .card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; margin-bottom: 16px;
+        }
+        .card-title {
+            font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text-secondary); margin-bottom: 12px;
+        }
+
+        /* ── KPI Grid ───────────────────────────────────────────── */
+        .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+        .kpi-card {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; text-align: center;
+        }
+        .kpi-value { font-size: 36px; font-weight: 700; line-height: 1.1; }
+        .kpi-label { font-size: 12px; color: var(--text-secondary); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ── Asset List ─────────────────────────────────────────── */
+        .asset-item {
+            padding: 12px; border-radius: 8px; cursor: pointer;
+            border: 1px solid transparent; margin-bottom: 8px;
+            transition: all 0.2s;
+        }
+        .asset-item:hover { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.3); }
+        .asset-item.active { background: rgba(59,130,246,0.15); border-color: var(--accent-blue); }
+        .asset-tag { font-size: 14px; font-weight: 600; }
+        .asset-name { font-size: 12px; color: var(--text-secondary); }
+        .asset-status { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+        .asset-status-dot { width: 6px; height: 6px; border-radius: 50%; }
+
+        /* ── Risk badges ────────────────────────────────────────── */
+        .risk-critical { color: var(--accent-red); }
+        .risk-high { color: var(--accent-orange); }
+        .risk-medium { color: var(--accent-orange); }
+        .risk-low { color: var(--accent-green); }
+        .risk-dot-critical { background: var(--accent-red); }
+        .risk-dot-high { background: var(--accent-orange); }
+        .risk-dot-medium { background: #eab308; }
+        .risk-dot-low { background: var(--accent-green); }
+
+        /* ── Detail Sections ────────────────────────────────────── */
+        .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .chart-container { position: relative; height: 250px; }
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
+
+        /* ── Prescriptive Action Card ───────────────────────────── */
+        .action-card {
+            background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1));
+            border: 1px solid rgba(59,130,246,0.3);
+            border-radius: 12px; padding: 24px; margin-bottom: 16px;
+        }
+        .action-priority {
+            display: inline-block; padding: 4px 12px; border-radius: 6px;
+            font-size: 12px; font-weight: 700; text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .priority-emergency { background: rgba(239,68,68,0.2); color: var(--accent-red); border: 1px solid var(--accent-red); }
+        .priority-urgent { background: rgba(245,158,11,0.2); color: var(--accent-orange); border: 1px solid var(--accent-orange); }
+        .priority-high { background: rgba(245,158,11,0.15); color: var(--accent-orange); border: 1px solid rgba(245,158,11,0.5); }
+        .priority-medium { background: rgba(59,130,246,0.15); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.5); }
+
+        .action-detail { margin-bottom: 8px; }
+        .action-label { font-size: 11px; color: var(--text-secondary); text-transform: uppercase; }
+        .action-value { font-size: 14px; margin-top: 2px; }
+
+        /* ── Smart Swap ─────────────────────────────────────────── */
+        .swap-card {
+            border-radius: 12px; padding: 20px; margin-bottom: 16px;
+        }
+        .swap-recommended {
+            background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(59,130,246,0.1));
+            border: 1px solid rgba(16,185,129,0.3);
+        }
+        .swap-not-needed {
+            background: var(--bg-card); border: 1px solid var(--border);
+        }
+
+        /* ── Notification Test Panel ────────────────────────────── */
+        .test-panel {
+            background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 20px; margin-bottom: 16px;
+        }
+        .test-panel textarea {
+            width: 100%; background: var(--bg-primary); border: 1px solid var(--border);
+            color: var(--text-primary); border-radius: 8px; padding: 12px;
+            font-family: inherit; font-size: 14px; resize: vertical; min-height: 80px;
+        }
+        .test-panel select, .test-panel input {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            color: var(--text-primary); border-radius: 8px; padding: 8px 12px;
+            font-size: 14px; width: 100%;
+        }
+        .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+        .btn {
+            padding: 10px 20px; border-radius: 8px; border: none;
+            font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+        }
+        .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* ── Pipeline Result ────────────────────────────────────── */
+        .pipeline-result {
+            background: var(--bg-primary); border: 1px solid var(--border);
+            border-radius: 8px; padding: 16px; margin-top: 12px;
+            font-family: 'Consolas', 'Fira Code', monospace; font-size: 13px;
+            white-space: pre-wrap; max-height: 300px; overflow-y: auto;
+        }
+        .result-pass { border-left: 4px solid var(--accent-green); }
+        .result-reject { border-left: 4px solid var(--accent-red); }
+
+        /* ── RUL Gauge ──────────────────────────────────────────── */
+        .rul-display { text-align: center; padding: 20px; }
+        .rul-hours { font-size: 64px; font-weight: 700; line-height: 1; }
+        .rul-unit { font-size: 18px; color: var(--text-secondary); }
+        .rul-confidence { font-size: 14px; color: var(--text-secondary); margin-top: 8px; }
+
+        /* ── Tabs ───────────────────────────────────────────────── */
+        .tabs { display: flex; gap: 4px; margin-bottom: 20px; }
+        .tab {
+            padding: 8px 16px; border-radius: 8px; border: 1px solid var(--border);
+            background: transparent; color: var(--text-secondary);
+            cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.2s;
+        }
+        .tab.active { background: var(--accent-blue); color: white; border-color: var(--accent-blue); }
+        .tab:hover:not(.active) { background: rgba(59,130,246,0.1); }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ── Reflector Gate Visual ──────────────────────────────── */
+        .gate-visual {
+            display: flex; align-items: center; gap: 12px;
+            padding: 16px; border-radius: 8px;
+            margin: 12px 0;
+        }
+        .gate-pass { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); }
+        .gate-reject { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); }
+        .gate-icon { font-size: 28px; }
+
+        /* ── Loading ────────────────────────────────────────────── */
+        .spinner {
+            width: 20px; height: 20px; border: 2px solid var(--border);
+            border-top-color: var(--accent-blue); border-radius: 50%;
+            animation: spin 0.8s linear infinite; display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .hidden { display: none; }
+
+        /* ── Zone indicator bars ─────────────────────────────────── */
+        .zone-bar {
+            display: flex; height: 8px; border-radius: 4px; overflow: hidden;
+            margin-top: 8px;
+        }
+        .zone-a { background: var(--accent-green); flex: 2.8; }
+        .zone-b { background: #22c55e; flex: 4.3; }
+        .zone-c { background: var(--accent-orange); flex: 4.1; }
+        .zone-d { background: var(--accent-red); flex: 4; }
+        .zone-marker {
+            position: absolute; width: 2px; height: 16px; background: white;
+            top: -4px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <div class="logo">LOOM LINK</div>
+            <span class="header-badge badge-sovereign">100% Sovereign</span>
+            <span class="header-badge badge-challenge">Challenge 01</span>
+            <span class="header-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);">EN/NO Bilingual</span>
+        </div>
+        <div class="header-right">
+            <div class="status-indicator">
+                <span class="status-dot live"></span>
+                HM90 Node Connected
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot live" style="background:var(--accent-blue)"></span>
+                Reflector Gate Active
+            </div>
+            <a href="/swagger-ui.html" target="_blank" style="font-size:11px;padding:4px 10px;border-radius:6px;background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);text-decoration:none;font-weight:600;">API Docs</a>
+            <div class="status-indicator" style="color: var(--text-primary); font-weight: 600;">
+                Nordic Energy Matchbox 2026
+            </div>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- Sidebar: Asset Fleet -->
+        <div class="sidebar">
+            <div class="card-title">Fleet Assets</div>
+            <div id="asset-list"></div>
+
+            <div style="margin-top:20px">
+                <div class="card-title">Experience Bank</div>
+                <div id="stats-panel" class="card" style="padding:12px">
+                    <div class="spinner"></div> Loading...
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="content">
+            <!-- KPI Bar -->
+            <div class="kpi-grid" id="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-assets">—</div>
+                    <div class="kpi-label">Fleet Assets</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-critical" style="color:var(--accent-red)">—</div>
+                    <div class="kpi-label">Critical RUL</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-recovered" style="color:var(--accent-green)">—</div>
+                    <div class="kpi-label">Legacy Records Recovered</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-value" id="kpi-gate" style="color:var(--accent-blue)">0.85</div>
+                    <div class="kpi-label">Gate Threshold</div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab('overview')">Fleet Overview</button>
+                <button class="tab" onclick="switchTab('detail')">Asset Detail</button>
+                <button class="tab" onclick="switchTab('pipeline')">Pipeline Test</button>
+                <button class="tab" onclick="switchTab('inbox')">Exception Inbox <span id="inbox-badge" style="background:var(--accent-red);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none;">0</span></button>
+                <button class="tab" onclick="switchTab('resilience')">Scale &amp; Resilience</button>
+                <button class="tab" onclick="switchTab('audit')">Audit Trail</button>
+                <button class="tab" onclick="switchTab('analytics')">Analytics</button>
+                <button class="tab" onclick="switchTab('health')">Sovereign Health</button>
+            </div>
+
+            <!-- Tab: Fleet Overview -->
+            <div id="tab-overview" class="tab-content active">
+                <div class="section-title">RUL Forecast — All Rotating Assets</div>
+                <div id="rul-fleet-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
+                    <div class="card"><div class="spinner"></div> Computing forecasts...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Asset Detail -->
+            <div id="tab-detail" class="tab-content">
+                <div id="detail-placeholder" style="text-align:center; padding:60px; color:var(--text-secondary)">
+                    Select an asset from the sidebar to view details
+                </div>
+                <div id="detail-content" class="hidden">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+                        <div>
+                            <h2 id="detail-tag" style="font-size:28px; font-weight:700;"></h2>
+                            <p id="detail-name" style="color:var(--text-secondary);"></p>
+                        </div>
+                        <div id="detail-rul-badge" style="text-align:right;"></div>
+                    </div>
+
+                    <div class="detail-grid">
+                        <!-- RUL Gauge -->
+                        <div class="card">
+                            <div class="card-title">Remaining Useful Life Forecast</div>
+                            <div class="rul-display">
+                                <div class="rul-hours" id="detail-rul-hours">—</div>
+                                <div class="rul-unit">hours</div>
+                                <div class="rul-confidence" id="detail-rul-confidence"></div>
+                                <div id="detail-rul-risk" style="margin-top:8px;font-weight:600;"></div>
+                            </div>
+                        </div>
+                        <!-- Vibration Chart -->
+                        <div class="card">
+                            <div class="card-title">Vibration Trend (48h)</div>
+                            <div class="chart-container">
+                                <canvas id="vibration-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="detail-grid">
+                        <!-- Temperature Chart -->
+                        <div class="card">
+                            <div class="card-title">Bearing Temperature (48h)</div>
+                            <div class="chart-container">
+                                <canvas id="temp-chart"></canvas>
+                            </div>
+                        </div>
+                        <!-- ISO Zone Indicator -->
+                        <div class="card">
+                            <div class="card-title">ISO 10816 Severity Classification</div>
+                            <div id="zone-display" style="padding:20px;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Prescriptive Action -->
+                    <div class="section-title">Prescriptive Maintenance Intelligence</div>
+                    <div id="prescriptive-panel"></div>
+
+                    <!-- Smart Swap -->
+                    <div id="smart-swap-panel"></div>
+
+                    <!-- Failure History -->
+                    <div class="card" style="margin-top:16px;">
+                        <div class="card-title">Experience Bank — Failure History</div>
+                        <div id="failure-history"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Pipeline Test -->
+            <div id="tab-pipeline" class="tab-content">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <div class="section-title" style="margin-bottom:0;">Live Pipeline Test — Free-Text Classification</div>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <span id="demo-status-text" style="font-size:12px; color:var(--text-secondary);">Demo Mode: OFF</span>
+                        <button class="btn" id="demo-toggle-btn"
+                            style="background:var(--bg-primary);color:var(--accent-orange);border:1px solid var(--accent-orange);padding:6px 14px;font-size:12px;"
+                            onclick="toggleDemoMode()">
+                            Enable Demo Mode
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pitch Playbook Banner -->
+                <div id="pitch-playbook" class="card" style="border: 1px solid rgba(139,92,246,0.4); background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08)); margin-bottom:16px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
+                        <span style="font-size:18px;">&#127919;</span>
+                        <span style="font-size:14px; font-weight:700; color:var(--accent-purple);">PITCH PLAYBOOK — April 22nd Demo Flow</span>
+                    </div>
+                    <div style="display:flex; gap:16px;">
+                        <div style="flex:1; padding:12px; background:rgba(239,68,68,0.08); border:1px solid rgba(239,68,68,0.3); border-radius:8px;">
+                            <div style="font-size:12px; font-weight:600; color:var(--accent-red); margin-bottom:4px;">STEP 1: Prove Safety</div>
+                            <div style="font-size:13px; color:var(--text-secondary);">Click <strong>"Vague Note"</strong> — the Reflector Gate will REJECT it (confidence ~0.38). This proves the system never hallucinating into SAP.</div>
+                        </div>
+                        <div style="flex:0 0 40px; display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--text-secondary);">&#8594;</div>
+                        <div style="flex:1; padding:12px; background:rgba(16,185,129,0.08); border:1px solid rgba(16,185,129,0.3); border-radius:8px;">
+                            <div style="font-size:12px; font-weight:600; color:var(--accent-green); margin-bottom:4px;">STEP 2: Prove Capability</div>
+                            <div style="font-size:13px; color:var(--text-secondary);">Click <strong>"Bearing Failure"</strong> — confidence ~0.94, PASSES the gate, writes ISO 14224 code to SAP. This is the 30% capacity recovery.</div>
+                        </div>
+                        <div style="flex:0 0 40px; display:flex; align-items:center; justify-content:center; font-size:24px; color:var(--text-secondary);">&#8594;</div>
+                        <div style="flex:1; padding:12px; background:rgba(59,130,246,0.08); border:1px solid rgba(59,130,246,0.3); border-radius:8px;">
+                            <div style="font-size:12px; font-weight:600; color:var(--accent-blue); margin-bottom:4px;">STEP 3: Show Intelligence</div>
+                            <div style="font-size:13px; color:var(--text-secondary);">Switch to <strong>Asset Detail</strong> tab, click <strong>P-1001A</strong> — show the 72h RUL forecast, prescriptive action with parts/tools, and Smart Swap.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="test-panel">
+                    <div class="card-title">Simulate SAP OData Notification</div>
+                    <textarea id="test-freetext" placeholder="Enter technician's free-text (English or Norwegian / Norsk)...&#10;EN: Pump making loud grinding noise, vibration increasing&#10;NO: Pumpe lager høy skrapelyd, vibrasjon øker, lagertemp 84C">Pump P-1001A making loud grinding noise, vibration increasing over last 2 shifts. Bearing temperature rising. Suspect drive-end bearing failure.</textarea>
+                    <div class="test-grid">
+                        <div>
+                            <label class="action-label">Equipment Tag</label>
+                            <select id="test-equipment"></select>
+                        </div>
+                        <div>
+                            <label class="action-label">SAP Notification Number</label>
+                            <input id="test-notif-number" value="10004567" />
+                        </div>
+                    </div>
+                    <button class="btn btn-primary" id="test-submit" onclick="submitPipelineTest()">
+                        Run Full Pipeline (Semantic Analysis &#8594; Reflector Gate &#8594; BAPI Write-Back)
+                    </button>
+                    <div id="test-loading" class="hidden" style="margin-top:12px;">
+                        <span class="spinner"></span> Sending to HM90 Sovereign Node for semantic analysis...
+                    </div>
+                    <div id="test-result" class="hidden"></div>
+                </div>
+
+                <!-- Scenario Grid: Split into REJECT and PASS columns -->
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:16px;">
+                    <!-- REJECT Scenarios -->
+                    <div class="card" style="border-top: 3px solid var(--accent-red);">
+                        <div class="card-title" style="color:var(--accent-red);">&#128721; Gate REJECTION Scenarios (Prove Safety)</div>
+
+                        <button class="btn scenario-btn" style="background:var(--bg-primary);color:var(--text-primary);border:1px solid rgba(239,68,68,0.3);text-align:left;padding:14px;width:100%;margin-bottom:8px;" onclick="loadSample(0)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong>Vague Technician Note</strong>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(239,68,68,0.15);color:var(--accent-red);">~0.38 conf</span>
+                            </div>
+                            <small style="color:var(--text-secondary);display:block;margin-top:4px;">"Something doesn't sound right on the pump. Not sure what it is."</small>
+                            <small style="color:var(--accent-red);font-weight:600;display:block;margin-top:4px;">&#8594; Gate rejects: No specific symptoms, no measurements, no fault location</small>
+                        </button>
+
+                        <button class="btn scenario-btn" style="background:var(--bg-primary);color:var(--text-primary);border:1px solid rgba(239,68,68,0.3);text-align:left;padding:14px;width:100%;margin-bottom:8px;" onclick="loadSample(1)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong>Ambiguous Noise (Just Under Threshold)</strong>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(245,158,11,0.15);color:var(--accent-orange);">~0.72 conf</span>
+                            </div>
+                            <small style="color:var(--text-secondary);display:block;margin-top:4px;">"Unusual rattling noise coming from pump during operation."</small>
+                            <small style="color:var(--accent-orange);font-weight:600;display:block;margin-top:4px;">&#8594; Gate rejects: 0.72 &lt; 0.85 threshold. Noise is subjective without vibration data</small>
+                        </button>
+                    </div>
+
+                    <!-- PASS Scenarios -->
+                    <div class="card" style="border-top: 3px solid var(--accent-green);">
+                        <div class="card-title" style="color:var(--accent-green);">&#9989; Gate ACCEPTANCE Scenarios (Prove Capability)</div>
+
+                        <button class="btn scenario-btn" style="background:var(--bg-primary);color:var(--text-primary);border:1px solid rgba(16,185,129,0.3);text-align:left;padding:14px;width:100%;margin-bottom:8px;" onclick="loadSample(2)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong>Bearing Failure — VIB</strong>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--accent-green);">~0.94 conf</span>
+                            </div>
+                            <small style="color:var(--text-secondary);display:block;margin-top:4px;">Grinding noise + rising vibration + 82C bearing temp on pump drive end</small>
+                            <small style="color:var(--accent-green);font-weight:600;display:block;margin-top:4px;">&#8594; VIB (B01) written to SAP via BAPI. 3 convergent symptom indicators.</small>
+                        </button>
+
+                        <button class="btn scenario-btn" style="background:var(--bg-primary);color:var(--text-primary);border:1px solid rgba(16,185,129,0.3);text-align:left;padding:14px;width:100%;margin-bottom:8px;" onclick="loadSample(3)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong>Seal Leak — ELP</strong>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--accent-green);">~0.91 conf</span>
+                            </div>
+                            <small style="color:var(--text-secondary);display:block;margin-top:4px;">Drip from mechanical seal area, worsening daily, fluid pool under skid</small>
+                            <small style="color:var(--accent-green);font-weight:600;display:block;margin-top:4px;">&#8594; ELP (S02) written to SAP. Progressive leak with physical evidence.</small>
+                        </button>
+
+                        <button class="btn scenario-btn" style="background:var(--bg-primary);color:var(--text-primary);border:1px solid rgba(16,185,129,0.3);text-align:left;padding:14px;width:100%;margin-bottom:8px;" onclick="loadSample(4)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong>Compressor Overheating — OHE</strong>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--accent-green);">~0.92 conf</span>
+                            </div>
+                            <small style="color:var(--text-secondary);display:block;margin-top:4px;">Lube oil temp alarm at 92C (normal 65C), progressive rise over 6 hours</small>
+                            <small style="color:var(--accent-green);font-weight:600;display:block;margin-top:4px;">&#8594; OHE (L01) written to SAP. Objective measurement anchor confirms classification.</small>
+                        </button>
+
+                        <button class="btn scenario-btn" style="background:var(--bg-primary);color:var(--text-primary);border:1px solid rgba(16,185,129,0.3);text-align:left;padding:14px;width:100%;margin-bottom:8px;" onclick="loadSample(5)">
+                            <div style="display:flex;justify-content:space-between;align-items:center;">
+                                <strong>Complete Breakdown — BRD</strong>
+                                <span style="font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--accent-green);">~0.96 conf</span>
+                            </div>
+                            <small style="color:var(--text-secondary);display:block;margin-top:4px;">Pump tripped and seized on night shift, cannot restart</small>
+                            <small style="color:var(--accent-green);font-weight:600;display:block;margin-top:4px;">&#8594; BRD (M01) written to SAP. Breakdown is binary — highest possible confidence.</small>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pipeline History -->
+                <div class="card" style="margin-top:16px;">
+                    <div class="card-title">Pipeline Execution History (this session)</div>
+                    <div id="pipeline-history" style="font-size:13px;color:var(--text-secondary);">No pipeline runs yet.</div>
+                </div>
+            </div>
+
+            <!-- Tab: Exception Inbox -->
+            <div id="tab-inbox" class="tab-content">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <div class="section-title" style="margin-bottom:0;">Exception Inbox — Rejected Classifications</div>
+                    <button class="btn" onclick="loadExceptionInbox()"
+                        style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:6px 14px;font-size:12px;">
+                        Refresh
+                    </button>
+                </div>
+
+                <!-- Inbox Stats -->
+                <div id="inbox-stats" style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:16px;">
+                    <div class="card" style="text-align:center;padding:14px;">
+                        <div style="font-size:28px;font-weight:700;color:var(--accent-orange);" id="inbox-stat-pending">0</div>
+                        <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Pending</div>
+                    </div>
+                    <div class="card" style="text-align:center;padding:14px;">
+                        <div style="font-size:28px;font-weight:700;color:var(--accent-green);" id="inbox-stat-approved">0</div>
+                        <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Approved</div>
+                    </div>
+                    <div class="card" style="text-align:center;padding:14px;">
+                        <div style="font-size:28px;font-weight:700;color:var(--accent-blue);" id="inbox-stat-reclassified">0</div>
+                        <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Reclassified</div>
+                    </div>
+                    <div class="card" style="text-align:center;padding:14px;">
+                        <div style="font-size:28px;font-weight:700;color:var(--text-secondary);" id="inbox-stat-dismissed">0</div>
+                        <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Dismissed</div>
+                    </div>
+                </div>
+
+                <!-- Inbox Items -->
+                <div id="inbox-items">
+                    <div class="card"><div class="spinner"></div> Loading exception inbox...</div>
+                </div>
+            </div>
+
+            <!-- Tab: Scale & Resilience -->
+            <div id="tab-resilience" class="tab-content">
+                <div class="section-title" style="margin-bottom:16px;">Scale & Resilience — Offshore Survival Patterns</div>
+
+                <!-- Resilience KPIs -->
+                <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:16px; margin-bottom:24px;">
+                    <!-- Semantic Cache Card -->
+                    <div class="card" style="border-top:3px solid var(--accent-purple);">
+                        <div class="card-title">Semantic Cache (pgvector)</div>
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+                            <span style="font-size:32px;font-weight:700;color:var(--accent-purple);" id="res-cache-size">0</span>
+                            <span style="font-size:12px;color:var(--text-secondary);">entries</span>
+                        </div>
+                        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:6px;">
+                            Total cache hits: <span style="color:var(--accent-green);font-weight:600;" id="res-cache-hits">0</span>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">
+                            Verified classifications are cached by text similarity. &gt;95% trigram match bypasses Ollama (&lt;50ms vs 2-8s).
+                        </div>
+                    </div>
+
+                    <!-- DLQ Card -->
+                    <div class="card" style="border-top:3px solid var(--accent-orange);">
+                        <div class="card-title">Dead Letter Queue (SAP Sync)</div>
+                        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">
+                            <span style="font-size:32px;font-weight:700;color:var(--accent-orange);" id="res-dlq-pending">0</span>
+                            <span style="font-size:12px;color:var(--text-secondary);">pending sync</span>
+                        </div>
+                        <div style="font-size:13px;display:flex;gap:16px;margin-bottom:6px;">
+                            <span style="color:var(--text-secondary);">Synced: <span style="color:var(--accent-green);font-weight:600;" id="res-dlq-synced">0</span></span>
+                            <span style="color:var(--text-secondary);">Failed: <span style="color:var(--accent-red);font-weight:600;" id="res-dlq-failed">0</span></span>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">
+                            If SAP BAPI fails (offshore network drop), items queue here with exponential backoff retry (30s &rarr; 480s).
+                        </div>
+                    </div>
+
+                    <!-- RBAC Card -->
+                    <div class="card" style="border-top:3px solid var(--accent-blue);">
+                        <div class="card-title">RBAC — Role-Based Access</div>
+                        <div id="res-rbac-users" style="font-size:13px;line-height:1.8;">Loading...</div>
+                        <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-top:8px;">
+                            Only SENIOR_ENGINEER can approve/reclassify/dismiss Exception Inbox items.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- DLQ Items Table -->
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div class="card-title" style="margin-bottom:0;">SAP Sync Queue — Recent Items</div>
+                        <button class="btn" onclick="loadResilienceData()"
+                            style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:4px 12px;font-size:11px;">
+                            Refresh
+                        </button>
+                    </div>
+                    <div id="res-dlq-items" style="font-size:13px;color:var(--text-secondary);">No DLQ items.</div>
+                </div>
+            </div>
+
+            <!-- Tab: Audit Trail -->
+            <div id="tab-audit" class="tab-content">
+                <div class="section-title" style="margin-bottom:16px;">Audit Trail — Immutable Classification Record</div>
+                <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:24px;">
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-blue);" id="audit-total">0</div><div class="kpi-label">Total Classifications</div></div>
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-green);" id="audit-passed">0</div><div class="kpi-label">Gate Passed</div></div>
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-red);" id="audit-rejected">0</div><div class="kpi-label">Gate Rejected</div></div>
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-purple);" id="audit-avg-conf">0%</div><div class="kpi-label">Avg Confidence</div></div>
+                </div>
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div class="card-title" style="margin-bottom:0;">Classification Audit Log (Newest First)</div>
+                        <div style="display:flex;gap:8px;">
+                            <select id="audit-filter" onchange="loadAuditLogs()" style="background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;">
+                                <option value="all">All</option>
+                                <option value="passed">Gate Passed</option>
+                                <option value="rejected">Gate Rejected</option>
+                            </select>
+                            <button class="btn" onclick="loadAuditLogs()" style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:4px 12px;font-size:11px;">Refresh</button>
+                            <button class="btn" onclick="window.open(API + '/api/v1/audit/export/csv')" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:4px 12px;font-size:11px;">Export CSV</button>
+                        </div>
+                    </div>
+                    <div id="audit-logs-container" style="max-height:600px;overflow-y:auto;">
+                        <div style="font-size:13px;color:var(--text-secondary);">No audit records yet. Process notifications to generate audit trail.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Analytics -->
+            <div id="tab-analytics" class="tab-content">
+                <div class="section-title" style="margin-bottom:16px;">Pipeline Analytics — Operational Intelligence KPIs</div>
+                <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:24px;">
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-green);">
+                        <div class="kpi-value" style="color:var(--accent-green);" id="an-pass-rate">0%</div>
+                        <div class="kpi-label">Gate Pass Rate</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-blue);">
+                        <div class="kpi-value" style="color:var(--accent-blue);" id="an-avg-latency">0ms</div>
+                        <div class="kpi-label">Avg Pipeline Latency</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-purple);">
+                        <div class="kpi-value" style="color:var(--accent-purple);" id="an-cache-rate">0%</div>
+                        <div class="kpi-label">Cache Hit Rate</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-orange);">
+                        <div class="kpi-value" style="color:var(--accent-orange);" id="an-hours-saved">0h</div>
+                        <div class="kpi-label">Man-Hours Saved</div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
+                    <!-- Classification Metrics -->
+                    <div class="card" style="border-top:3px solid var(--accent-green);">
+                        <div class="card-title">Classification Performance</div>
+                        <div id="an-classification-detail" style="font-size:13px;line-height:2;"></div>
+                    </div>
+                    <!-- SAP Sync Health -->
+                    <div class="card" style="border-top:3px solid var(--accent-blue);">
+                        <div class="card-title">SAP Sync Reliability</div>
+                        <div id="an-sap-detail" style="font-size:13px;line-height:2;"></div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                    <!-- Cache Efficiency -->
+                    <div class="card" style="border-top:3px solid var(--accent-purple);">
+                        <div class="card-title">Semantic Cache Efficiency</div>
+                        <div id="an-cache-detail" style="font-size:13px;line-height:2;"></div>
+                    </div>
+                    <!-- Operational Savings -->
+                    <div class="card" style="border-top:3px solid var(--accent-orange);">
+                        <div class="card-title">Operational Savings Estimate</div>
+                        <div id="an-savings-detail" style="font-size:13px;line-height:2;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab: Sovereign Health -->
+            <div id="tab-health" class="tab-content">
+                <div class="section-title" style="margin-bottom:16px;">Sovereign Node Health — 100% Local Execution Proof</div>
+                <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:24px;">
+                    <div class="kpi-card" id="health-overall-card">
+                        <div class="kpi-value" id="health-overall" style="font-size:20px;">CHECKING...</div>
+                        <div class="kpi-label">Overall Status</div>
+                    </div>
+                    <div class="kpi-card" id="health-llm-card">
+                        <div class="kpi-value" style="font-size:20px;" id="health-llm">--</div>
+                        <div class="kpi-label">Ollama LLM</div>
+                    </div>
+                    <div class="kpi-card" id="health-db-card">
+                        <div class="kpi-value" style="font-size:20px;" id="health-db">--</div>
+                        <div class="kpi-label">Experience Bank</div>
+                    </div>
+                    <div class="kpi-card" id="health-sap-card">
+                        <div class="kpi-value" style="font-size:20px;" id="health-sap">--</div>
+                        <div class="kpi-label">SAP Gateway</div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
+                    <div class="card" style="border-top:3px solid var(--accent-green);">
+                        <div class="card-title">LLM Engine Details</div>
+                        <div id="health-llm-detail" style="font-size:13px;line-height:2;color:var(--text-secondary);">Loading...</div>
+                    </div>
+                    <div class="card" style="border-top:3px solid var(--accent-blue);">
+                        <div class="card-title">Experience Bank Details</div>
+                        <div id="health-db-detail" style="font-size:13px;line-height:2;color:var(--text-secondary);">Loading...</div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-top:3px solid var(--accent-purple);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div class="card-title" style="margin-bottom:0;">Pipeline Configuration — Zero Data Egress</div>
+                        <button class="btn" onclick="loadHealthData()" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:4px 12px;font-size:11px;">Refresh</button>
+                    </div>
+                    <div id="health-config-detail" style="font-size:13px;line-height:2;color:var(--text-secondary);">Loading...</div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+<script>
+const API = '';  // Same origin
+const API_KEY = 'loom-sovereign-hm90-2026'; // Sovereign Node API key
+
+// Authenticated fetch wrapper — attaches X-API-Key to every request
+function apiFetch(url, options = {}) {
+    options.headers = {
+        ...options.headers,
+        'X-API-Key': API_KEY
+    };
+    return fetch(url, options);
+}
+
+let assets = [];
+let vibChart = null;
+let tempChart = null;
+let selectedAsset = null;
+
+const samples = [
+    // ── REJECT scenarios (indices 0-1) ──────────────────────────
+    { text: "Something doesn't sound right on the pump. Checked it twice but not sure what it is.", tag: "P-1002A", expectReject: true },
+    { text: "Unusual rattling noise coming from the pump during normal operation. Cannot pinpoint source.", tag: "P-1002A", expectReject: true },
+    // ── PASS scenarios (indices 2-5) ────────────────────────────
+    { text: "Pump P-1001A making loud grinding noise from drive end. Vibration increasing steadily over last 2 shifts. Bearing temperature reading 82C, normally 55C. Suspect drive-end bearing failure. Previous bearing replacement was 18 months ago.", tag: "P-1001A", expectReject: false },
+    { text: "Visible drip from mechanical seal area on P-2001A, getting worse compared to yesterday. Pool of fluid under pump skid. Seal area is wet, process medium confirmed.", tag: "P-2001A", expectReject: false },
+    { text: "C-1001 lube oil temperature alarm activated. Oil temp reading 92C on local gauge, normally 65C. Progressive increase over past 6 hours. Lube oil may need full system flush.", tag: "C-1001", expectReject: false },
+    { text: "Pump P-1001A tripped and seized during night shift. Motor overload alarm active. Shaft locked up, cannot rotate by hand. Complete breakdown, requires immediate intervention.", tag: "P-1001A", expectReject: false }
+];
+let demoModeOn = false;
+let pipelineHistory = [];
+
+// ── Init ────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadAssets();
+    await loadStats();
+    await loadFleetRul();
+    await checkDemoMode();
+    await loadInboxBadge();
+});
+
+async function loadInboxBadge() {
+    try {
+        const res = await apiFetch(API + '/api/v1/exceptions/stats');
+        const stats = await res.json();
+        const badge = document.getElementById('inbox-badge');
+        if (stats.pending > 0) {
+            badge.textContent = stats.pending;
+            badge.style.display = 'inline';
+        }
+    } catch(e) { /* inbox not loaded yet */ }
+}
+
+async function checkDemoMode() {
+    try {
+        const res = await apiFetch(API + '/api/v1/demo/status');
+        const data = await res.json();
+        demoModeOn = data.demoMode;
+        updateDemoUI();
+    } catch(e) { /* ignore */ }
+}
+
+async function toggleDemoMode() {
+    try {
+        const res = await apiFetch(API + '/api/v1/demo/toggle', { method: 'POST' });
+        const data = await res.json();
+        demoModeOn = data.demoMode;
+        updateDemoUI();
+    } catch(e) { console.error('Failed to toggle demo mode:', e); }
+}
+
+function updateDemoUI() {
+    const btn = document.getElementById('demo-toggle-btn');
+    const text = document.getElementById('demo-status-text');
+    if (demoModeOn) {
+        btn.textContent = 'Disable Demo Mode';
+        btn.style.background = 'rgba(245,158,11,0.15)';
+        btn.style.color = 'var(--accent-orange)';
+        btn.style.borderColor = 'var(--accent-orange)';
+        text.textContent = 'Demo Mode: ON (deterministic)';
+        text.style.color = 'var(--accent-orange)';
+    } else {
+        btn.textContent = 'Enable Demo Mode';
+        btn.style.background = 'var(--bg-primary)';
+        btn.style.color = 'var(--text-secondary)';
+        btn.style.borderColor = 'var(--border)';
+        text.textContent = 'Demo Mode: OFF (live LLM)';
+        text.style.color = 'var(--text-secondary)';
+    }
+}
+
+async function loadAssets() {
+    try {
+        const res = await apiFetch(API + '/api/v1/dashboard/assets');
+        assets = await res.json();
+        renderAssetList();
+        populateEquipmentSelect();
+    } catch(e) { console.error('Failed to load assets:', e); }
+}
+
+async function loadStats() {
+    try {
+        const res = await apiFetch(API + '/api/v1/dashboard/stats');
+        const stats = await res.json();
+        document.getElementById('kpi-assets').textContent = stats.totalAssets;
+        document.getElementById('kpi-recovered').textContent = stats.legacyRecoveredRecords;
+        document.getElementById('stats-panel').innerHTML = `
+            <div style="font-size:13px;">
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="color:var(--text-secondary)">Assets</span><span>${stats.totalAssets}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="color:var(--text-secondary)">Failure Records</span><span>${stats.totalFailureRecords}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="color:var(--text-secondary)">Legacy Recovered</span><span style="color:var(--accent-green)">${stats.legacyRecoveredRecords}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="color:var(--text-secondary)">Vibration Points</span><span>${stats.totalVibrationReadings}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                    <span style="color:var(--text-secondary)">Model</span><span style="color:var(--accent-purple)">Mistral 7B</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;">
+                    <span style="color:var(--text-secondary)">Gate Threshold</span><span style="color:var(--accent-blue)">${stats.reflectorGateThreshold}</span>
+                </div>
+            </div>`;
+    } catch(e) { console.error('Failed to load stats:', e); }
+}
+
+async function loadFleetRul() {
+    try {
+        const res = await apiFetch(API + '/api/v1/dashboard/rul');
+        const forecasts = await res.json();
+        let criticalCount = 0;
+        const grid = document.getElementById('rul-fleet-grid');
+        grid.innerHTML = '';
+        forecasts.forEach(f => {
+            if (f.riskLevel === 'CRITICAL' || f.riskLevel === 'HIGH') criticalCount++;
+            const riskClass = 'risk-' + f.riskLevel.toLowerCase();
+            const dotClass = 'risk-dot-' + f.riskLevel.toLowerCase();
+            grid.innerHTML += `
+                <div class="card" style="cursor:pointer;" onclick="selectAsset('${f.equipmentTag}')">
+                    <div style="display:flex;justify-content:space-between;align-items:start;">
+                        <div>
+                            <div style="font-weight:700;font-size:16px;">${f.equipmentTag}</div>
+                            <div style="font-size:12px;color:var(--text-secondary);">${f.assetName || ''}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div style="font-size:28px;font-weight:700;" class="${riskClass}">${f.rulHours >= 0 ? Math.round(f.rulHours) : '—'}</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">hours RUL</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:8px;">
+                        <span class="asset-status-dot ${dotClass}"></span>
+                        <span style="font-size:12px;" class="${riskClass}">${f.riskLevel}</span>
+                        <span style="font-size:12px;color:var(--text-secondary);margin-left:auto;">
+                            ${f.currentVelocityMmS > 0 ? f.currentVelocityMmS.toFixed(1) + ' mm/s' : ''}
+                        </span>
+                        <span style="font-size:12px;color:var(--text-secondary);">${f.currentSeverityZone || ''}</span>
+                    </div>
+                    <div style="margin-top:8px;font-size:11px;color:var(--text-secondary);">
+                        Confidence: ${(f.confidence * 100).toFixed(0)}% | Siblings: ${f.fleetSiblingCount} | History: ${f.siblingFailureRecords} records
+                    </div>
+                </div>`;
+        });
+        document.getElementById('kpi-critical').textContent = criticalCount;
+    } catch(e) {
+        document.getElementById('rul-fleet-grid').innerHTML = '<div class="card">Failed to load RUL data. Ensure server is running.</div>';
+    }
+}
+
+function renderAssetList() {
+    const list = document.getElementById('asset-list');
+    list.innerHTML = '';
+    assets.forEach(a => {
+        const isActive = selectedAsset === a.equipmentTag;
+        list.innerHTML += `
+            <div class="asset-item ${isActive ? 'active' : ''}" onclick="selectAsset('${a.equipmentTag}')">
+                <div class="asset-tag">${a.equipmentTag}</div>
+                <div class="asset-name">${a.assetName}</div>
+                <div class="asset-status">
+                    <span class="asset-status-dot" style="background:${a.operationalStatus==='RUNNING'?'var(--accent-green)':a.operationalStatus==='STANDBY'?'var(--accent-blue)':'var(--accent-orange)'}"></span>
+                    <span style="font-size:11px;color:var(--text-secondary)">${a.operationalStatus} | ${a.sapPlant === '1000' ? 'Johan Sverdrup' : 'Valhall'}</span>
+                </div>
+            </div>`;
+    });
+}
+
+function populateEquipmentSelect() {
+    const select = document.getElementById('test-equipment');
+    select.innerHTML = '';
+    assets.forEach(a => {
+        select.innerHTML += `<option value="${a.equipmentTag}" data-class="${a.equipmentClass}">${a.equipmentTag} — ${a.assetName}</option>`;
+    });
+}
+
+// ── Asset Detail ────────────────────────────────────────────────
+async function selectAsset(tag) {
+    selectedAsset = tag;
+    renderAssetList();
+    switchTab('detail');
+
+    document.getElementById('detail-placeholder').classList.add('hidden');
+    document.getElementById('detail-content').classList.remove('hidden');
+
+    const asset = assets.find(a => a.equipmentTag === tag);
+    document.getElementById('detail-tag').textContent = tag;
+    document.getElementById('detail-name').textContent = asset ? `${asset.assetName} | ${asset.manufacturer} ${asset.modelNumber} | ${asset.sapPlant === '1000' ? 'Johan Sverdrup' : 'Valhall'}` : '';
+
+    // Load all data in parallel
+    await Promise.all([
+        loadDetailRul(tag),
+        loadVibrationChart(tag),
+        loadPrescriptive(tag),
+        loadFailureHistory(tag)
+    ]);
+}
+
+async function loadDetailRul(tag) {
+    try {
+        const res = await apiFetch(API + `/api/v1/dashboard/rul/${tag}`);
+        const f = await res.json();
+        const riskClass = 'risk-' + (f.riskLevel || 'low').toLowerCase();
+
+        document.getElementById('detail-rul-hours').textContent = f.rulHours >= 0 ? Math.round(f.rulHours) : '—';
+        document.getElementById('detail-rul-hours').className = 'rul-hours ' + riskClass;
+        document.getElementById('detail-rul-confidence').textContent = `Confidence: ${(f.confidence * 100).toFixed(1)}% | ${f.fleetSiblingCount} fleet siblings | ${f.siblingFailureRecords} history records`;
+        document.getElementById('detail-rul-risk').textContent = f.riskLevel;
+        document.getElementById('detail-rul-risk').className = riskClass;
+
+        document.getElementById('detail-rul-badge').innerHTML = `
+            <div style="font-size:12px;color:var(--text-secondary);">Action Window</div>
+            <div style="font-size:18px;font-weight:600;" class="${riskClass}">${f.actionWindow}</div>`;
+
+        // Zone display
+        const zone = f.currentSeverityZone || 'A';
+        document.getElementById('zone-display').innerHTML = `
+            <div style="font-size:48px;font-weight:700;text-align:center;margin-bottom:12px;" class="${zone==='D'?'risk-critical':zone==='C'?'risk-high':zone==='B'?'risk-medium':'risk-low'}">Zone ${zone}</div>
+            <div style="font-size:14px;text-align:center;color:var(--text-secondary);margin-bottom:16px;">
+                Current: ${f.currentVelocityMmS > 0 ? f.currentVelocityMmS.toFixed(2) : '—'} mm/s
+                ${f.trendRateMmSPerHour > 0 ? '(+' + f.trendRateMmSPerHour.toFixed(3) + ' mm/s/hr)' : ''}
+            </div>
+            <div style="display:flex;gap:4px;height:24px;border-radius:4px;overflow:hidden;position:relative;">
+                <div style="flex:2.8;background:var(--accent-green);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;">A</div>
+                <div style="flex:4.3;background:#22c55e;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;">B</div>
+                <div style="flex:4.1;background:var(--accent-orange);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;">C</div>
+                <div style="flex:4;background:var(--accent-red);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;">D</div>
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:8px;display:flex;justify-content:space-between;">
+                <span>0</span><span>2.8</span><span>7.1</span><span>11.2</span><span>mm/s</span>
+            </div>`;
+    } catch(e) { console.error('Failed to load RUL:', e); }
+}
+
+async function loadVibrationChart(tag) {
+    try {
+        const res = await apiFetch(API + `/api/v1/dashboard/vibration/${tag}`);
+        const data = await res.json();
+        if (!data.length) return;
+
+        const labels = data.map(d => new Date(d.timestamp).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}));
+        const velocities = data.map(d => d.velocityMmS);
+        const temps = data.map(d => d.bearingTempC);
+
+        // Vibration chart
+        if (vibChart) vibChart.destroy();
+        vibChart = new Chart(document.getElementById('vibration-chart'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Velocity (mm/s)',
+                    data: velocities,
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59,130,246,0.1)',
+                    fill: true, tension: 0.3, pointRadius: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    annotation: {}
+                },
+                scales: {
+                    x: { ticks: { color: '#94a3b8', maxTicksLimit: 8 }, grid: { color: 'rgba(45,55,72,0.5)' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(45,55,72,0.5)' } }
+                }
+            }
+        });
+
+        // Temperature chart
+        if (tempChart) tempChart.destroy();
+        tempChart = new Chart(document.getElementById('temp-chart'), {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Bearing Temp (C)',
+                    data: temps,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245,158,11,0.1)',
+                    fill: true, tension: 0.3, pointRadius: 1
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { color: '#94a3b8', maxTicksLimit: 8 }, grid: { color: 'rgba(45,55,72,0.5)' } },
+                    y: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(45,55,72,0.5)' } }
+                }
+            }
+        });
+    } catch(e) { console.error('Failed to load vibration data:', e); }
+}
+
+async function loadPrescriptive(tag) {
+    try {
+        const res = await apiFetch(API + `/api/v1/dashboard/prescriptive/${tag}`);
+        const data = await res.json();
+        const nba = data.nextBestAction;
+        const swap = data.smartSwap;
+
+        const priorityClass = 'priority-' + (nba.priority || 'medium').toLowerCase();
+
+        document.getElementById('prescriptive-panel').innerHTML = `
+            <div class="action-card">
+                <div class="action-priority ${priorityClass}">${nba.priority}</div>
+                <div style="font-size:16px;font-weight:600;margin-bottom:12px;">Next Best Action</div>
+                <div style="margin-bottom:16px;color:var(--text-secondary);font-size:14px;line-height:1.6;">${nba.actionSummary}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+                    <div class="action-detail">
+                        <div class="action-label">Recommended Action</div>
+                        <div class="action-value">${nba.recommendedAction}</div>
+                    </div>
+                    <div class="action-detail">
+                        <div class="action-label">Required Parts</div>
+                        <div class="action-value">${nba.requiredParts}</div>
+                    </div>
+                    <div class="action-detail">
+                        <div class="action-label">Required Tools</div>
+                        <div class="action-value">${nba.requiredTools}</div>
+                    </div>
+                </div>
+                <div style="display:flex;gap:24px;margin-top:12px;">
+                    <div class="action-detail">
+                        <div class="action-label">Est. Downtime</div>
+                        <div class="action-value">${nba.estimatedDowntimeHours}h</div>
+                    </div>
+                    <div class="action-detail">
+                        <div class="action-label">Based on</div>
+                        <div class="action-value">${nba.siblingDataPoints} sibling data points</div>
+                    </div>
+                </div>
+            </div>`;
+
+        // Smart Swap
+        if (swap.hasRedundancyPartner) {
+            const swapClass = swap.swapRecommended ? 'swap-recommended' : 'swap-not-needed';
+            document.getElementById('smart-swap-panel').innerHTML = `
+                <div class="swap-card ${swapClass}">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span style="font-size:20px;">${swap.swapRecommended ? '&#9888;' : '&#9989;'}</span>
+                        <span style="font-size:16px;font-weight:600;">Smart Swap: 1oo2 Redundancy Assessment</span>
+                    </div>
+                    <div style="color:var(--text-secondary);font-size:14px;line-height:1.6;">${swap.assessment}</div>
+                    ${swap.partnerTag ? `<div style="margin-top:8px;font-size:13px;color:var(--text-secondary);">Partner: ${swap.partnerTag} (${swap.partnerName || ''}) | Status: ${swap.partnerStatus} | Partner RUL: ${Math.round(swap.partnerRulHours)}h</div>` : ''}
+                </div>`;
+        } else {
+            document.getElementById('smart-swap-panel').innerHTML = `
+                <div class="swap-card swap-not-needed">
+                    <div style="font-size:14px;color:var(--text-secondary);">No redundancy partner configured — single-train operation.</div>
+                </div>`;
+        }
+    } catch(e) { console.error('Failed to load prescriptive:', e); }
+}
+
+async function loadFailureHistory(tag) {
+    try {
+        const res = await apiFetch(API + `/api/v1/dashboard/failures/${tag}`);
+        const data = await res.json();
+        if (!data.length) {
+            document.getElementById('failure-history').innerHTML = '<div style="color:var(--text-secondary);padding:12px;">No failure history recorded for this asset.</div>';
+            return;
+        }
+        let html = '<table style="width:100%;font-size:13px;border-collapse:collapse;">';
+        html += '<tr style="color:var(--text-secondary);border-bottom:1px solid var(--border);"><th style="text-align:left;padding:8px;">Date</th><th style="text-align:left;padding:8px;">Failure Mode</th><th style="text-align:left;padding:8px;">Cause</th><th style="text-align:left;padding:8px;">Action</th><th style="text-align:right;padding:8px;">Hours</th><th style="text-align:right;padding:8px;">Downtime</th></tr>';
+        data.forEach(f => {
+            html += `<tr style="border-bottom:1px solid rgba(45,55,72,0.5);">
+                <td style="padding:8px;">${f.failureDate}</td>
+                <td style="padding:8px;"><span style="color:var(--accent-orange);font-weight:600;">${f.failureModeCode}</span></td>
+                <td style="padding:8px;">${f.causeCode || '—'}</td>
+                <td style="padding:8px;color:var(--text-secondary);">${(f.repairAction||'').substring(0,60)}${(f.repairAction||'').length>60?'...':''}</td>
+                <td style="padding:8px;text-align:right;">${f.operatingHoursAtFailure}</td>
+                <td style="padding:8px;text-align:right;">${f.downtimeHours}h</td>
+            </tr>`;
+        });
+        html += '</table>';
+        document.getElementById('failure-history').innerHTML = html;
+    } catch(e) { console.error('Failed to load failure history:', e); }
+}
+
+// ── Pipeline Test ───────────────────────────────────────────────
+async function submitPipelineTest() {
+    const btn = document.getElementById('test-submit');
+    const loading = document.getElementById('test-loading');
+    const resultDiv = document.getElementById('test-result');
+
+    btn.disabled = true;
+    loading.classList.remove('hidden');
+    resultDiv.classList.add('hidden');
+
+    const select = document.getElementById('test-equipment');
+    const equipClass = select.options[select.selectedIndex].dataset.class;
+
+    const payload = {
+        sapNotificationNumber: document.getElementById('test-notif-number').value,
+        freeTextDescription: document.getElementById('test-freetext').value,
+        equipmentTag: select.value,
+        equipmentClass: equipClass,
+        sapPlant: assets.find(a => a.equipmentTag === select.value)?.sapPlant || '1000'
+    };
+
+    try {
+        const res = await apiFetch(API + '/api/v1/notifications', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        const passed = data.reflectorGatePassed;
+        const resultClass = passed ? 'result-pass' : 'result-reject';
+
+        resultDiv.className = `pipeline-result ${resultClass}`;
+        resultDiv.innerHTML = `
+<span style="font-size:16px;font-weight:700;color:${passed?'var(--accent-green)':'var(--accent-red)'};">
+${passed ? '&#9989; REFLECTOR GATE: PASSED — Written to SAP' : '&#128721; REFLECTOR GATE: REJECTED — Flagged for Human Review'}
+</span>
+
+<span style="color:var(--text-secondary);">Notification:</span>  ${data.notificationNumber}
+<span style="color:var(--text-secondary);">Status:</span>        ${data.status}
+
+<span style="color:var(--accent-blue);font-weight:600;">ISO 14224 Classification:</span>
+<span style="color:var(--text-secondary);">  Failure Mode:</span>  <span style="font-weight:700;color:${passed?'var(--accent-green)':'var(--accent-orange)'};">${data.failureModeCode}</span> (${data.failureModeDescription})
+<span style="color:var(--text-secondary);">  Cause Code:</span>    ${data.causeCode || 'N/A'}
+<span style="color:var(--text-secondary);">  Confidence:</span>    <span style="font-weight:700;font-size:15px;color:${passed?'var(--accent-green)':'var(--accent-red)'};">${(data.confidence * 100).toFixed(1)}%</span> ${passed ? '&#8805;' : '<'} 85.0% threshold
+
+<span style="color:var(--accent-purple);font-weight:600;">Semantic Engine Reasoning:</span>
+<span style="color:var(--text-secondary);line-height:1.6;">${data.reasoning || 'N/A'}</span>
+
+<span style="color:var(--accent-purple);font-weight:600;">Reflector Gate Verdict:</span>
+<span style="color:var(--text-secondary);line-height:1.6;">${data.gateReasoning}</span>
+
+<span style="color:var(--text-secondary);">Written to SAP:</span> ${data.writtenBackToSap ? '<span style="color:var(--accent-green);font-weight:700;">YES</span> via BAPI_ALM_NOTIF_DATA_MODIFY (Clean Core)' : '<span style="color:var(--accent-red);font-weight:700;">NO</span> — queued for human engineer review'}
+<span style="color:var(--text-secondary);">Inference Time:</span> ${data.inferenceLatencyMs}ms
+<span style="color:var(--text-secondary);">Total Pipeline:</span> ${data.totalPipelineLatencyMs}ms
+<span style="color:var(--text-secondary);">Sovereign Node:</span> HM90 (100.64.132.128) — Mistral 7B | ${demoModeOn ? 'Demo Mode' : 'Live Inference'}
+${data.cacheHit ? `\n<span style="color:var(--accent-purple);font-weight:700;">CACHE HIT</span> (${data.cacheMatchType} match, lookup: ${data.cacheLookupMs}ms) — Ollama bypassed!` : ''}
+${data.queuedForRetry ? `\n<span style="color:var(--accent-orange);font-weight:700;">DLQ QUEUED</span> — SAP offline, retrying with exponential backoff` : ''}`;
+
+        resultDiv.classList.remove('hidden');
+
+        // Record in history
+        pipelineHistory.unshift({
+            time: new Date().toLocaleTimeString(),
+            notif: data.notificationNumber,
+            code: data.failureModeCode,
+            confidence: data.confidence,
+            passed: passed,
+            latency: data.totalPipelineLatencyMs
+        });
+        renderPipelineHistory();
+
+        // Increment notification number for next test
+        const numInput = document.getElementById('test-notif-number');
+        numInput.value = String(parseInt(numInput.value) + 1);
+
+    } catch(e) {
+        resultDiv.className = 'pipeline-result result-reject';
+        resultDiv.textContent = 'Error: ' + e.message + '\n\nEnsure the Spring Boot server is running on port 8080\nand the HM90 node is reachable at 100.64.132.128:11434';
+        resultDiv.classList.remove('hidden');
+    }
+
+    btn.disabled = false;
+    loading.classList.add('hidden');
+}
+
+function loadSample(idx) {
+    const s = samples[idx];
+    document.getElementById('test-freetext').value = s.text;
+    const select = document.getElementById('test-equipment');
+    for (let i = 0; i < select.options.length; i++) {
+        if (select.options[i].value === s.tag) { select.selectedIndex = i; break; }
+    }
+}
+
+function renderPipelineHistory() {
+    const div = document.getElementById('pipeline-history');
+    if (pipelineHistory.length === 0) {
+        div.innerHTML = '<span style="color:var(--text-secondary)">No pipeline runs yet.</span>';
+        return;
+    }
+    let html = '<table style="width:100%;border-collapse:collapse;">';
+    html += '<tr style="border-bottom:1px solid var(--border);color:var(--text-secondary)"><th style="text-align:left;padding:6px;">Time</th><th style="text-align:left;padding:6px;">Notif#</th><th style="text-align:left;padding:6px;">Code</th><th style="text-align:right;padding:6px;">Confidence</th><th style="text-align:center;padding:6px;">Gate</th><th style="text-align:right;padding:6px;">Latency</th></tr>';
+    pipelineHistory.forEach(h => {
+        const color = h.passed ? 'var(--accent-green)' : 'var(--accent-red)';
+        html += `<tr style="border-bottom:1px solid rgba(45,55,72,0.5);">
+            <td style="padding:6px;">${h.time}</td>
+            <td style="padding:6px;">${h.notif}</td>
+            <td style="padding:6px;font-weight:600;color:var(--accent-orange);">${h.code}</td>
+            <td style="padding:6px;text-align:right;font-weight:600;color:${color};">${(h.confidence * 100).toFixed(1)}%</td>
+            <td style="padding:6px;text-align:center;">${h.passed ? '<span style="color:var(--accent-green);">&#9989; PASS</span>' : '<span style="color:var(--accent-red);">&#128721; REJECT</span>'}</td>
+            <td style="padding:6px;text-align:right;">${h.latency}ms</td>
+        </tr>`;
+    });
+    html += '</table>';
+    div.innerHTML = html;
+}
+
+// ── Scale & Resilience ──────────────────────────────────────────
+async function loadResilienceData() {
+    try {
+        const [cacheRes, dlqRes, rbacRes, dlqItemsRes] = await Promise.all([
+            apiFetch(API + '/api/v1/resilience/cache/stats'),
+            apiFetch(API + '/api/v1/resilience/dlq/stats'),
+            apiFetch(API + '/api/v1/resilience/rbac/users'),
+            apiFetch(API + '/api/v1/resilience/dlq/items?status=PENDING_SYNC')
+        ]);
+        const cache = await cacheRes.json();
+        const dlq = await dlqRes.json();
+        const rbac = await rbacRes.json();
+        const dlqItems = await dlqItemsRes.json();
+
+        document.getElementById('res-cache-size').textContent = cache.cacheSize;
+        document.getElementById('res-cache-hits').textContent = cache.totalHits;
+        document.getElementById('res-dlq-pending').textContent = dlq.pendingSync;
+        document.getElementById('res-dlq-synced').textContent = dlq.synced;
+        document.getElementById('res-dlq-failed').textContent = dlq.failed;
+
+        // RBAC users
+        let rbacHtml = '';
+        Object.entries(rbac).forEach(([name, role]) => {
+            const roleColors = { SENIOR_ENGINEER: 'var(--accent-green)', ADMIN: 'var(--accent-purple)', OPERATOR: 'var(--accent-blue)', TECHNICIAN: 'var(--text-secondary)' };
+            const color = roleColors[role] || 'var(--text-secondary)';
+            rbacHtml += `<div style="display:flex;justify-content:space-between;"><span>${name}</span><span style="color:${color};font-weight:600;font-size:11px;">${role}</span></div>`;
+        });
+        document.getElementById('res-rbac-users').innerHTML = rbacHtml;
+
+        // DLQ items table
+        if (dlqItems.length === 0) {
+            document.getElementById('res-dlq-items').innerHTML = '<span style="color:var(--text-secondary)">Queue is empty — all items synced or no failures.</span>';
+        } else {
+            let html = '<table style="width:100%;border-collapse:collapse;">';
+            html += '<tr style="border-bottom:1px solid var(--border);color:var(--text-secondary);font-size:11px;"><th style="text-align:left;padding:6px;">Notification</th><th>Equipment</th><th>Code</th><th>Retries</th><th>Status</th><th>Next Retry</th></tr>';
+            dlqItems.forEach(item => {
+                const statusColor = item.syncStatus === 'SYNCED' ? 'var(--accent-green)' : item.syncStatus === 'FAILED' ? 'var(--accent-red)' : 'var(--accent-orange)';
+                html += `<tr style="border-bottom:1px solid rgba(45,55,72,0.5);">
+                    <td style="padding:6px;">${item.sapNotificationNumber}</td>
+                    <td style="padding:6px;">${item.equipmentTag}</td>
+                    <td style="padding:6px;color:var(--accent-orange);font-weight:600;">${item.failureModeCode}</td>
+                    <td style="padding:6px;text-align:center;">${item.retryCount}/${item.maxRetries}</td>
+                    <td style="padding:6px;color:${statusColor};font-weight:600;">${item.syncStatus}</td>
+                    <td style="padding:6px;font-size:11px;">${item.nextRetryAt ? new Date(item.nextRetryAt).toLocaleTimeString() : '—'}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            document.getElementById('res-dlq-items').innerHTML = html;
+        }
+    } catch(e) {
+        console.error('Failed to load resilience data:', e);
+    }
+}
+
+// ── Exception Inbox ─────────────────────────────────────────────
+async function loadExceptionInbox() {
+    try {
+        const [statsRes, itemsRes] = await Promise.all([
+            apiFetch(API + '/api/v1/exceptions/stats'),
+            apiFetch(API + '/api/v1/exceptions')
+        ]);
+        const stats = await statsRes.json();
+        const items = await itemsRes.json();
+
+        document.getElementById('inbox-stat-pending').textContent = stats.pending;
+        document.getElementById('inbox-stat-approved').textContent = stats.approved;
+        document.getElementById('inbox-stat-reclassified').textContent = stats.reclassified;
+        document.getElementById('inbox-stat-dismissed').textContent = stats.dismissed;
+
+        const badge = document.getElementById('inbox-badge');
+        if (stats.pending > 0) {
+            badge.textContent = stats.pending;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
+        }
+
+        const container = document.getElementById('inbox-items');
+        if (items.length === 0) {
+            container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-secondary);padding:40px;">No pending exceptions. All classifications either passed the Reflector Gate or have been reviewed.</div>';
+            return;
+        }
+
+        container.innerHTML = items.map(item => {
+            const priorityColors = { CRITICAL: 'var(--accent-red)', HIGH: 'var(--accent-orange)', MEDIUM: 'var(--accent-blue)', LOW: 'var(--text-secondary)' };
+            const pColor = priorityColors[item.priority] || 'var(--text-secondary)';
+            return `
+            <div class="card" style="border-left:3px solid ${pColor}; margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                    <div>
+                        <span style="font-size:15px;font-weight:700;">${item.sapNotificationNumber}</span>
+                        <span style="margin-left:8px;font-size:12px;color:var(--text-secondary);">${item.equipmentTag}</span>
+                        <span style="margin-left:8px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:600;background:rgba(239,68,68,0.15);color:${pColor};border:1px solid ${pColor}40;">${item.priority}</span>
+                    </div>
+                    <span style="font-size:11px;color:var(--text-secondary);">${new Date(item.createdAt).toLocaleString()}</span>
+                </div>
+                <div style="margin-bottom:8px;padding:10px;background:var(--bg-primary);border-radius:6px;font-size:13px;color:var(--text-secondary);line-height:1.5;">
+                    "${item.originalText}"
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:10px;">
+                    <div><span style="color:var(--text-secondary);">Suggested Code:</span> <span style="font-weight:600;color:var(--accent-orange);">${item.suggestedFailureCode || 'N/A'}</span></div>
+                    <div><span style="color:var(--text-secondary);">Confidence:</span> <span style="font-weight:600;color:var(--accent-red);">${(item.confidenceScore * 100).toFixed(1)}%</span></div>
+                    <div><span style="color:var(--text-secondary);">Cause Code:</span> ${item.suggestedCauseCode || 'N/A'}</div>
+                    <div><span style="color:var(--text-secondary);">Gate Threshold:</span> ${(item.gateThreshold * 100).toFixed(1)}%</div>
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
+                    <span style="color:var(--accent-red);font-weight:600;">Rejection:</span> ${item.rejectionReason}
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+                    <span style="color:var(--accent-purple);font-weight:600;">LLM Reasoning:</span> ${item.llmReasoning || 'N/A'}
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="reviewException('${item.id}','approve')" class="btn" style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.4);padding:6px 16px;font-size:12px;cursor:pointer;border-radius:6px;">Approve</button>
+                    <button onclick="promptReclassify('${item.id}')" class="btn" style="background:rgba(59,130,246,0.15);color:var(--accent-blue);border:1px solid rgba(59,130,246,0.4);padding:6px 16px;font-size:12px;cursor:pointer;border-radius:6px;">Reclassify</button>
+                    <button onclick="reviewException('${item.id}','dismiss')" class="btn" style="background:rgba(100,116,139,0.15);color:var(--text-secondary);border:1px solid rgba(100,116,139,0.4);padding:6px 16px;font-size:12px;cursor:pointer;border-radius:6px;">Dismiss</button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        document.getElementById('inbox-items').innerHTML = '<div class="card" style="color:var(--accent-red);">Failed to load exception inbox: ' + e.message + '</div>';
+    }
+}
+
+// ── Engineer Selection Cache ────────────────────────────────────
+let cachedEngineers = null;
+async function loadEngineers() {
+    if (cachedEngineers) return cachedEngineers;
+    try {
+        const res = await apiFetch(API + '/api/v1/resilience/rbac/users');
+        cachedEngineers = await res.json();
+        return cachedEngineers;
+    } catch(e) {
+        return { 'Senior Engineer': 'SENIOR_ENGINEER', 'Lars Hansen': 'SENIOR_ENGINEER', 'Ingrid Johansen': 'SENIOR_ENGINEER' };
+    }
+}
+
+function showReviewModal(id, action, isReclassify) {
+    loadEngineers().then(engineers => {
+        // Filter to only SENIOR_ENGINEER and ADMIN for write actions
+        const eligible = Object.entries(engineers).filter(([_, role]) =>
+            role === 'SENIOR_ENGINEER' || role === 'ADMIN');
+
+        const overlay = document.createElement('div');
+        overlay.id = 'review-modal-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+
+        const actionColors = { approve: 'var(--accent-green)', reclassify: 'var(--accent-blue)', dismiss: 'var(--text-secondary)' };
+        const color = actionColors[action] || 'var(--accent-blue)';
+
+        overlay.innerHTML = `
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;width:420px;max-width:90vw;">
+                <h3 style="margin-bottom:16px;color:${color};font-size:16px;text-transform:uppercase;">${action} Exception</h3>
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Reviewing Engineer</label>
+                <select id="modal-engineer" style="width:100%;padding:10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;font-size:14px;margin-bottom:14px;">
+                    ${eligible.map(([name, role]) => `<option value="${name}">${name} (${role})</option>`).join('')}
+                </select>
+                ${isReclassify ? `
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Correct ISO 14224 Failure Code</label>
+                <select id="modal-failure-code" style="width:100%;padding:10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;font-size:14px;margin-bottom:14px;">
+                    <option value="VIB">VIB — Vibration</option>
+                    <option value="OHE">OHE — Overheating</option>
+                    <option value="ELP">ELP — External leakage (process)</option>
+                    <option value="ELU">ELU — External leakage (utility)</option>
+                    <option value="INL">INL — Internal leakage</option>
+                    <option value="BRD">BRD — Breakdown</option>
+                    <option value="NOI">NOI — Noise</option>
+                    <option value="PLU">PLU — Plugged/choked</option>
+                    <option value="ERO">ERO — Erosion</option>
+                    <option value="FTS">FTS — Failure to start</option>
+                    <option value="FTF">FTF — Failure to function</option>
+                    <option value="HIO">HIO — High output</option>
+                    <option value="LOO">LOO — Low output</option>
+                    <option value="AIR">AIR — Abnormal instrument reading</option>
+                    <option value="STD">STD — Structural deficiency</option>
+                    <option value="PDE">PDE — Parameter deviation</option>
+                    <option value="SER">SER — Minor in-service</option>
+                    <option value="UST">UST — Spurious stop</option>
+                </select>` : ''}
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Review Notes (optional)</label>
+                <textarea id="modal-notes" rows="3" style="width:100%;padding:10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical;margin-bottom:16px;" placeholder="Engineering justification..."></textarea>
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button onclick="document.getElementById('review-modal-overlay').remove()" style="padding:8px 20px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;">Cancel</button>
+                    <button onclick="submitReview('${id}','${action}',${isReclassify})" style="padding:8px 20px;background:${color}22;color:${color};border:1px solid ${color}66;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Confirm ${action.charAt(0).toUpperCase() + action.slice(1)}</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    });
+}
+
+async function submitReview(id, action, isReclassify) {
+    const engineer = document.getElementById('modal-engineer').value;
+    const notes = document.getElementById('modal-notes').value;
+
+    let body = { reviewedBy: engineer, notes: notes || '' };
+    let endpoint = '/api/v1/exceptions/' + id + '/' + action;
+
+    if (isReclassify) {
+        body.failureModeCode = document.getElementById('modal-failure-code').value;
+        endpoint = '/api/v1/exceptions/' + id + '/reclassify';
+    }
+
+    try {
+        const res = await apiFetch(API + endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        document.getElementById('review-modal-overlay').remove();
+        if (res.ok) {
+            loadExceptionInbox();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(err.message || 'Action failed — check RBAC permissions.');
+        }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
+function reviewException(id, action) {
+    showReviewModal(id, action, false);
+}
+
+function promptReclassify(id) {
+    showReviewModal(id, 'reclassify', true);
+}
+
+// ── Tab Switching ───────────────────────────────────────────────
+function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+    if (name === 'inbox') loadExceptionInbox();
+    if (name === 'resilience') loadResilienceData();
+    if (name === 'audit') loadAuditLogs();
+    if (name === 'analytics') loadAnalytics();
+    if (name === 'health') loadHealthData();
+}
+
+// ── Audit Trail ─────────────────────────────────────────────────
+async function loadAuditLogs() {
+    try {
+        // Load stats
+        const statsRes = await apiFetch(API + '/api/v1/audit/stats');
+        const stats = await statsRes.json();
+        document.getElementById('audit-total').textContent = stats.totalClassifications;
+        document.getElementById('audit-passed').textContent = stats.passed;
+        document.getElementById('audit-rejected').textContent = stats.rejected;
+        document.getElementById('audit-avg-conf').textContent = stats.averageConfidence + '%';
+
+        // Load logs with filter
+        const filter = document.getElementById('audit-filter').value;
+        let url = API + '/api/v1/audit/logs';
+        if (filter === 'passed') url = API + '/api/v1/audit/logs/gate/true';
+        else if (filter === 'rejected') url = API + '/api/v1/audit/logs/gate/false';
+
+        const logsRes = await fetch(url);
+        const logs = await logsRes.json();
+        const container = document.getElementById('audit-logs-container');
+
+        if (logs.length === 0) {
+            container.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);padding:20px;text-align:center;">No audit records yet. Process notifications to generate audit trail.</div>';
+            return;
+        }
+
+        container.innerHTML = logs.map(log => `
+            <div class="card" style="margin-bottom:12px;border-left:4px solid ${log.gatePassed ? 'var(--accent-green)' : 'var(--accent-red)'};">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                    <div>
+                        <span style="font-weight:700;font-size:14px;">SAP #${log.sapNotificationNumber}</span>
+                        <span style="margin-left:8px;font-size:12px;color:var(--text-secondary);">${log.equipmentTag}</span>
+                    </div>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                        <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;
+                            background:${log.gatePassed ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};
+                            color:${log.gatePassed ? 'var(--accent-green)' : 'var(--accent-red)'};">
+                            ${log.gatePassed ? 'PASSED' : 'REJECTED'}
+                        </span>
+                        ${log.writtenToSap ? '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(59,130,246,0.15);color:var(--accent-blue);font-weight:600;">SAP WRITTEN</span>' : ''}
+                    </div>
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px;font-style:italic;">"${log.originalText.length > 120 ? log.originalText.substring(0,120) + '...' : log.originalText}"</div>
+                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-size:12px;">
+                    <div><span style="color:var(--text-secondary);">Code:</span> <span style="font-weight:600;color:var(--accent-purple);">${log.failureModeCode}</span></div>
+                    <div><span style="color:var(--text-secondary);">Confidence:</span> <span style="font-weight:600;">${(log.confidenceScore * 100).toFixed(1)}%</span></div>
+                    <div><span style="color:var(--text-secondary);">Latency:</span> <span style="font-weight:600;">${log.totalPipelineLatencyMs}ms</span></div>
+                    <div><span style="color:var(--text-secondary);">Model:</span> <span style="font-weight:600;">${log.modelName}</span></div>
+                </div>
+                <div style="margin-top:6px;font-size:11px;color:var(--text-secondary);">
+                    <span>JSON valid 1st: ${log.jsonValidFirstAttempt ? 'Yes' : 'No'}</span> |
+                    <span>LLM attempts: ${log.llmAttempts}</span> |
+                    <span>Demo: ${log.demoMode ? 'Yes' : 'No'}</span> |
+                    <span>${new Date(log.createdAt).toLocaleString()}</span>
+                </div>
+                <details style="margin-top:8px;">
+                    <summary style="font-size:11px;color:var(--accent-blue);cursor:pointer;">LLM Reasoning + Gate Verdict</summary>
+                    <div style="margin-top:6px;font-size:12px;padding:8px;background:var(--bg-primary);border-radius:6px;">
+                        <div style="margin-bottom:6px;"><strong>LLM Reasoning:</strong> ${log.llmReasoning || 'N/A'}</div>
+                        <div><strong>Gate Verdict:</strong> ${log.gateReasoning || 'N/A'}</div>
+                    </div>
+                </details>
+            </div>
+        `).join('');
+    } catch(e) {
+        console.error('Audit load error:', e);
+    }
+}
+
+// ── Analytics ───────────────────────────────────────────────────
+async function loadAnalytics() {
+    try {
+        const res = await apiFetch(API + '/api/v1/analytics/kpis');
+        const kpis = await res.json();
+
+        // Top KPIs
+        document.getElementById('an-pass-rate').textContent = kpis.classification.passRate + '%';
+        document.getElementById('an-avg-latency').textContent = kpis.classification.avgPipelineLatencyMs + 'ms';
+        document.getElementById('an-cache-rate').textContent = kpis.cache.hitRate + '%';
+        document.getElementById('an-hours-saved').textContent = kpis.operationalSavings.estimatedManHoursSaved + 'h';
+
+        // Classification Detail
+        document.getElementById('an-classification-detail').innerHTML = `
+            <div>Total Processed: <strong>${kpis.classification.totalProcessed}</strong></div>
+            <div>Gate Passed: <strong style="color:var(--accent-green);">${kpis.classification.gatePassed}</strong></div>
+            <div>Gate Rejected: <strong style="color:var(--accent-red);">${kpis.classification.gateRejected}</strong></div>
+            <div>Pass Rate: <strong>${kpis.classification.passRate}%</strong></div>
+            <div>Avg Confidence: <strong>${kpis.classification.avgConfidence}%</strong></div>
+            <div>Avg Latency: <strong>${kpis.classification.avgPipelineLatencyMs}ms</strong></div>
+        `;
+
+        // SAP Sync Detail
+        document.getElementById('an-sap-detail').innerHTML = `
+            <div>Direct SAP Success: <strong style="color:var(--accent-green);">${kpis.sapSync.directSuccess}</strong></div>
+            <div>DLQ Pending: <strong style="color:var(--accent-orange);">${kpis.sapSync.dlqPending}</strong></div>
+            <div>DLQ Recovered: <strong style="color:var(--accent-green);">${kpis.sapSync.dlqSynced}</strong></div>
+            <div>DLQ Failed: <strong style="color:var(--accent-red);">${kpis.sapSync.dlqFailed}</strong></div>
+            <div>Sync Reliability: <strong>${kpis.sapSync.syncReliability}%</strong></div>
+        `;
+
+        // Cache Detail
+        document.getElementById('an-cache-detail').innerHTML = `
+            <div>Cache Entries: <strong>${kpis.cache.entries}</strong></div>
+            <div>Total Hits: <strong style="color:var(--accent-green);">${kpis.cache.totalHits}</strong></div>
+            <div>Hit Rate: <strong>${kpis.cache.hitRate}%</strong></div>
+            <div>Est. Time Saved: <strong>${(kpis.cache.estimatedTimeSavedMs / 1000).toFixed(1)}s</strong> (LLM bypass)</div>
+        `;
+
+        // Savings Detail
+        document.getElementById('an-savings-detail').innerHTML = `
+            <div>Notifications Automated: <strong>${kpis.operationalSavings.notificationsAutomated}</strong></div>
+            <div>Manual Time/Notification: <strong>${kpis.operationalSavings.manualMinutesPerNotification} min</strong></div>
+            <div>Automated Time/Notification: <strong>${kpis.operationalSavings.avgAutomatedSeconds}s</strong></div>
+            <div>Man-Hours Saved: <strong style="color:var(--accent-green);font-size:16px;">${kpis.operationalSavings.estimatedManHoursSaved}h</strong></div>
+            <div>Efficiency Gain: <strong style="color:var(--accent-orange);">${kpis.operationalSavings.efficiencyGainPercent}%</strong></div>
+        `;
+    } catch(e) {
+        console.error('Analytics load error:', e);
+    }
+}
+
+// ── Sovereign Health ────────────────────────────────────────────
+async function loadHealthData() {
+    try {
+        const res = await apiFetch(API + '/api/v1/health/sovereign');
+        const health = await res.json();
+
+        // Overall status
+        const overall = document.getElementById('health-overall');
+        const overallCard = document.getElementById('health-overall-card');
+        overall.textContent = health.overallStatus;
+        overallCard.style.borderTop = '3px solid ' + (health.overallStatus === 'SOVEREIGN_ACTIVE' ? 'var(--accent-green)' : 'var(--accent-red)');
+        overall.style.color = health.overallStatus === 'SOVEREIGN_ACTIVE' ? 'var(--accent-green)' : 'var(--accent-red)';
+
+        // LLM status
+        const llmStatus = health.llm.status;
+        document.getElementById('health-llm').textContent = llmStatus;
+        document.getElementById('health-llm').style.color = llmStatus === 'ONLINE' ? 'var(--accent-green)' : 'var(--accent-red)';
+        document.getElementById('health-llm-card').style.borderTop = '3px solid ' + (llmStatus === 'ONLINE' ? 'var(--accent-green)' : 'var(--accent-red)');
+
+        // DB status
+        const dbStatus = health.experienceBank.status;
+        document.getElementById('health-db').textContent = dbStatus;
+        document.getElementById('health-db').style.color = dbStatus === 'ONLINE' ? 'var(--accent-green)' : 'var(--accent-red)';
+        document.getElementById('health-db-card').style.borderTop = '3px solid ' + (dbStatus === 'ONLINE' ? 'var(--accent-green)' : 'var(--accent-red)');
+
+        // SAP status
+        const sapStatus = health.sapGateway.status;
+        document.getElementById('health-sap').textContent = sapStatus;
+        document.getElementById('health-sap').style.color = 'var(--accent-blue)';
+        document.getElementById('health-sap-card').style.borderTop = '3px solid var(--accent-blue)';
+
+        // LLM Detail
+        document.getElementById('health-llm-detail').innerHTML = `
+            <div>Status: <strong style="color:${llmStatus === 'ONLINE' ? 'var(--accent-green)' : 'var(--accent-red)'};">${llmStatus}</strong></div>
+            <div>Endpoint: <strong>${health.llm.endpoint || 'N/A'}</strong></div>
+            <div>Model: <strong>${health.llm.model || 'N/A'}</strong></div>
+            <div>Model Loaded: <strong>${health.llm.modelLoaded !== undefined ? (health.llm.modelLoaded ? 'Yes' : 'No') : 'N/A'}</strong></div>
+            <div>Response Time: <strong>${health.llm.responseTimeMs || 'N/A'}ms</strong></div>
+            ${health.llm.error ? '<div style="color:var(--accent-red);">Error: ' + health.llm.error + '</div>' : ''}
+        `;
+
+        // DB Detail
+        document.getElementById('health-db-detail').innerHTML = `
+            <div>Status: <strong style="color:${dbStatus === 'ONLINE' ? 'var(--accent-green)' : 'var(--accent-red)'};">${dbStatus}</strong></div>
+            <div>Database: <strong>${health.experienceBank.database || 'N/A'}</strong></div>
+            <div>pgvector: <strong>${health.experienceBank.pgvector || 'N/A'}</strong></div>
+            <div>Response Time: <strong>${health.experienceBank.responseTimeMs || 'N/A'}ms</strong></div>
+            ${health.experienceBank.error ? '<div style="color:var(--accent-red);">Error: ' + health.experienceBank.error + '</div>' : ''}
+        `;
+
+        // Config Detail
+        document.getElementById('health-config-detail').innerHTML = `
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                <div>Gate Threshold: <strong>${health.configuration.gateThreshold}</strong></div>
+                <div>Model: <strong>${health.configuration.modelId}</strong></div>
+                <div>Ollama: <strong>${health.configuration.ollamaEndpoint}</strong></div>
+                <div>Data Egress: <strong style="color:var(--accent-red);">${health.configuration.dataEgress}</strong></div>
+                <div>Execution: <strong style="color:var(--accent-green);">${health.configuration.executionMode}</strong></div>
+                <div>SAP: <strong>${health.sapGateway ? health.sapGateway.bapiFunction : 'BAPI_ALM_NOTIF_DATA_MODIFY'}</strong></div>
+            </div>
+        `;
+    } catch(e) {
+        console.error('Health load error:', e);
+        document.getElementById('health-overall').textContent = 'ERROR';
+        document.getElementById('health-overall').style.color = 'var(--accent-red)';
+    }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+# LOOM LINK EDGE LOGIC - Challenge 01: Maintenance Optimization
+# Nordic Energy Matchbox 2026 | Equinor & Aker BP
+
+spring:
+  application:
+    name: loom-link-edge
+
+  # Experience Bank (PostgreSQL with pgvector on HM90 node)
+  datasource:
+    url: jdbc:postgresql://192.168.29.152:5432/loom_link
+    driver-class-name: org.postgresql.Driver
+    username: postgres
+    password: industrial_grade_security
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # Jackson
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+# LOOM LINK CONFIGURATION
+
+loomlink:
+
+  # HM90 Sovereign Node (LLM via Ollama)
+  llm:
+    base-url: http://192.168.29.152:11434
+    model-id: mistral:7b
+    temperature: 0.1
+    timeout-seconds: 120
+
+  # Reflector Gate
+  reflector-gate:
+    confidence-threshold: 0.85
+
+  # SAP Gateway - simulated failure rate for DLQ demo
+  # 0.0 = never fails (safe demos). 0.2 = 20% random failures (to demo DLQ).
+  sap:
+    simulated-failure-rate: 0.0
+
+  # Semantic Cache
+  semantic-cache:
+    enabled: true
+    similarity-threshold: 0.95
+
+  # Demo Mode
+  demo-mode:
+    enabled: false
+
+  # API Security — Sovereign Node Authentication
+  # The API key is shared between SAP OData gateway and Loom Link.
+  # On an air-gapped private network, this is sufficient.
+  # Set api-key-enabled: false for local development without auth.
+  security:
+    api-key-enabled: true
+    api-key: ${LOOMLINK_API_KEY:loom-sovereign-hm90-2026}
+
+# SERVER
+
+server:
+  port: 8080
+
+# ACTUATOR + PROMETHEUS OBSERVABILITY
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: loom-link-edge
+      challenge: maintenance-optimization
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+
+# OPENAPI / SWAGGER
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method

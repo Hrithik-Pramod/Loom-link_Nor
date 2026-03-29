@@ -1,0 +1,33 @@
+# Build artifacts
+target/
+*.jar
+*.class
+
+# IDE files
+.idea/
+*.iml
+.vscode/
+.settings/
+.project
+.classpath
+
+# Git
+.git/
+.gitignore
+
+# Docker
+postgres_data/
+docker-compose.yml
+Dockerfile
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment files with secrets
+.env
+*.env.local
