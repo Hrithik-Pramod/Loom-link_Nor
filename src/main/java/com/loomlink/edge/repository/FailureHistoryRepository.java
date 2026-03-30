@@ -4,6 +4,7 @@ import com.loomlink.edge.domain.enums.FailureModeCode;
 import com.loomlink.edge.domain.model.FailureHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,13 +20,15 @@ public interface FailureHistoryRepository extends JpaRepository<FailureHistory, 
     /** Find all failure records for fleet siblings with the same failure mode. */
     @Query("SELECT fh FROM FailureHistory fh WHERE fh.equipmentTag IN :siblingTags " +
            "AND fh.failureModeCode = :failureMode ORDER BY fh.failureDate DESC")
-    List<FailureHistory> findSiblingFailures(List<String> siblingTags, FailureModeCode failureMode);
+    List<FailureHistory> findSiblingFailures(@Param("siblingTags") List<String> siblingTags,
+                                              @Param("failureMode") FailureModeCode failureMode);
 
     /** Average operating hours at failure for a given failure mode across a set of assets. */
     @Query("SELECT AVG(fh.operatingHoursAtFailure) FROM FailureHistory fh " +
            "WHERE fh.equipmentTag IN :tags AND fh.failureModeCode = :failureMode")
-    Double averageHoursAtFailure(List<String> tags, FailureModeCode failureMode);
+    Double averageHoursAtFailure(@Param("tags") List<String> tags,
+                                 @Param("failureMode") FailureModeCode failureMode);
 
     @Query("SELECT COUNT(fh) FROM FailureHistory fh WHERE fh.dataSource = :source")
-    long countByDataSource(String source);
+    long countByDataSource(@Param("source") String source);
 }

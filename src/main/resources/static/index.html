@@ -240,9 +240,10 @@
     <div class="header">
         <div class="header-left">
             <div class="logo">LOOM LINK</div>
-            <span class="header-badge badge-sovereign">100% Sovereign</span>
-            <span class="header-badge badge-challenge">Challenge 01</span>
-            <span class="header-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);">EN/NO Bilingual</span>
+            <span class="header-badge badge-sovereign">SOVEREIGN INTELLIGENCE LAYER</span>
+            <span class="header-badge badge-challenge">CHALLENGE 01 + 02 + 04</span>
+            <span class="header-badge" style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);">MAINTENANCE + EMISSIONS + ROBOTICS</span>
+            <span class="header-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);">EN/NO BILINGUAL</span>
         </div>
         <div class="header-right">
             <div class="status-indicator">
@@ -279,38 +280,41 @@
             <!-- KPI Bar -->
             <div class="kpi-grid" id="kpi-grid">
                 <div class="kpi-card">
-                    <div class="kpi-value" id="kpi-assets">—</div>
-                    <div class="kpi-label">Fleet Assets</div>
+                    <div class="kpi-value" style="color:var(--accent-blue);" id="kpi-total">—</div>
+                    <div class="kpi-label">Classifications Today</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-value" id="kpi-critical" style="color:var(--accent-red)">—</div>
-                    <div class="kpi-label">Critical RUL</div>
+                    <div class="kpi-value" style="color:var(--accent-green);" id="kpi-passed">—</div>
+                    <div class="kpi-label">Gate Passed → SAP</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-value" id="kpi-recovered" style="color:var(--accent-green)">—</div>
-                    <div class="kpi-label">Legacy Records Recovered</div>
+                    <div class="kpi-value" style="color:var(--accent-red);" id="kpi-rejected">—</div>
+                    <div class="kpi-label">Rejected → Human Review</div>
                 </div>
                 <div class="kpi-card">
-                    <div class="kpi-value" id="kpi-gate" style="color:var(--accent-blue)">0.85</div>
-                    <div class="kpi-label">Gate Threshold</div>
+                    <div class="kpi-value" style="color:var(--accent-purple);" id="kpi-cache">—</div>
+                    <div class="kpi-label">Experience Bank Entries</div>
                 </div>
             </div>
 
             <!-- Tabs -->
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('overview')">Fleet Overview</button>
-                <button class="tab" onclick="switchTab('detail')">Asset Detail</button>
-                <button class="tab" onclick="switchTab('pipeline')">Pipeline Test</button>
+                <button class="tab active" onclick="switchTab('pipeline')">Classify</button>
                 <button class="tab" onclick="switchTab('inbox')">Exception Inbox <span id="inbox-badge" style="background:var(--accent-red);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none;">0</span></button>
-                <button class="tab" onclick="switchTab('resilience')">Scale &amp; Resilience</button>
+                <button class="tab" onclick="switchTab('resilience')">Experience Bank</button>
+                <button class="tab" onclick="switchTab('emissions')">Emission Surveillance</button>
+                <button class="tab" onclick="switchTab('missions')">Mission Planning</button>
                 <button class="tab" onclick="switchTab('audit')">Audit Trail</button>
+                <button class="tab" onclick="switchTab('overview')">Fleet Intelligence</button>
+                <button class="tab" onclick="switchTab('detail')">Asset Detail</button>
                 <button class="tab" onclick="switchTab('analytics')">Analytics</button>
                 <button class="tab" onclick="switchTab('health')">Sovereign Health</button>
+                <button class="tab" onclick="switchTab('roadmap')">Roadmap</button>
             </div>
 
             <!-- Tab: Fleet Overview -->
-            <div id="tab-overview" class="tab-content active">
-                <div class="section-title">RUL Forecast — All Rotating Assets</div>
+            <div id="tab-overview" class="tab-content">
+                <div class="section-title">Fleet Intelligence — Asset Health & RUL Forecasting</div>
                 <div id="rul-fleet-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:16px;">
                     <div class="card"><div class="spinner"></div> Computing forecasts...</div>
                 </div>
@@ -381,7 +385,7 @@
             </div>
 
             <!-- Tab: Pipeline Test -->
-            <div id="tab-pipeline" class="tab-content">
+            <div id="tab-pipeline" class="tab-content active">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
                     <div class="section-title" style="margin-bottom:0;">Live Pipeline Test — Free-Text Classification</div>
                     <div style="display:flex; align-items:center; gap:12px;">
@@ -514,6 +518,153 @@
                 </div>
             </div>
 
+            <!-- Tab: Emission Surveillance (Challenge 02) -->
+            <div id="tab-emissions" class="tab-content">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                    <div class="section-title" style="margin-bottom:0;">Emission Surveillance — Robot Sensor Intelligence</div>
+                    <div style="display:flex;gap:8px;">
+                        <span class="header-badge" style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);">CHALLENGE 02</span>
+                        <span class="header-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);">EU 2024/1787</span>
+                        <button class="btn" onclick="loadEmissionData()" style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:6px 14px;font-size:12px;">Refresh</button>
+                    </div>
+                </div>
+
+                <!-- Emission KPIs -->
+                <div style="display:grid; grid-template-columns: repeat(5,1fr); gap:12px; margin-bottom:20px;">
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-blue);">
+                        <div class="kpi-value" style="color:var(--accent-blue);font-size:28px;" id="em-kpi-total">0</div>
+                        <div class="kpi-label">Total Detections</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-red);">
+                        <div class="kpi-value" style="color:var(--accent-red);font-size:28px;" id="em-kpi-fugitive">0</div>
+                        <div class="kpi-label">Fugitive Emissions</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-green);">
+                        <div class="kpi-value" style="color:var(--accent-green);font-size:28px;" id="em-kpi-suppressed">0</div>
+                        <div class="kpi-label">False Positives Suppressed</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-purple);">
+                        <div class="kpi-value" style="color:var(--accent-purple);font-size:28px;" id="em-kpi-confidence">0%</div>
+                        <div class="kpi-label">Avg Confidence</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-orange);">
+                        <div class="kpi-value" style="color:var(--accent-orange);font-size:28px;" id="em-kpi-compliance">0</div>
+                        <div class="kpi-label">Compliance Records</div>
+                    </div>
+                </div>
+
+                <!-- Emission Ingest Panel + Classification Distribution -->
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
+                    <!-- Ingest Panel -->
+                    <div class="test-panel">
+                        <div class="card-title">Simulate Robot Sensor Detection (SARA-Compatible)</div>
+                        <div class="test-grid">
+                            <div>
+                                <label class="action-label">Equipment Tag</label>
+                                <select id="em-equipment">
+                                    <option value="FLG-4401">FLG-4401 (Flange, Module B)</option>
+                                    <option value="VLV-2203">VLV-2203 (Valve, Module C)</option>
+                                    <option value="PST-1105">PST-1105 (Pressure Tx, Module A)</option>
+                                    <option value="PRV-3302">PRV-3302 (PRV, Module D)</option>
+                                    <option value="PMP-5501">PMP-5501 (Pump Seal, Module E)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="action-label">Sensor Modality</label>
+                                <select id="em-modality">
+                                    <option value="CH4">CH4 (Methane)</option>
+                                    <option value="VOC">VOC (Volatile Organic)</option>
+                                    <option value="THERMAL">THERMAL (Infrared)</option>
+                                    <option value="ACOUSTIC">ACOUSTIC (Ultrasonic)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="test-grid">
+                            <div>
+                                <label class="action-label">Raw Reading (ppm)</label>
+                                <input id="em-reading" type="number" value="850" step="10" />
+                            </div>
+                            <div>
+                                <label class="action-label">Location Area</label>
+                                <select id="em-location">
+                                    <option value="Module B Deck 2">Module B Deck 2</option>
+                                    <option value="Module C Deck 3">Module C Deck 3</option>
+                                    <option value="Module A Deck 1">Module A Deck 1</option>
+                                    <option value="Module D Deck 2">Module D Deck 2</option>
+                                    <option value="Module E Deck 1">Module E Deck 1</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="test-grid">
+                            <div>
+                                <label class="action-label">Robot ID</label>
+                                <input id="em-robot" value="spot-001" />
+                            </div>
+                            <div>
+                                <label class="action-label">Mission ID</label>
+                                <input id="em-mission" value="PATROL-2026-Q1-087" />
+                            </div>
+                        </div>
+
+                        <!-- Demo Scenario Quick-Load -->
+                        <div style="margin:12px 0 8px 0;font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Quick-Load Demo Scenarios</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                            <button class="btn" style="background:rgba(245,158,11,0.1);color:var(--accent-orange);border:1px solid rgba(245,158,11,0.3);font-size:12px;padding:8px;text-align:left;" onclick="loadEmissionScenario('maintenance')">
+                                <strong>Valve Maintenance</strong><br><small style="color:var(--text-secondary);">VLV-2203, 450ppm during active work order</small>
+                            </button>
+                            <button class="btn" style="background:rgba(139,92,246,0.1);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);font-size:12px;padding:8px;text-align:left;" onclick="loadEmissionScenario('artifact')">
+                                <strong>Sensor Artifact</strong><br><small style="color:var(--text-secondary);">PST-1105, 180ppm transient spike</small>
+                            </button>
+                            <button class="btn" style="background:rgba(59,130,246,0.1);color:var(--accent-blue);border:1px solid rgba(59,130,246,0.3);font-size:12px;padding:8px;text-align:left;" onclick="loadEmissionScenario('venting')">
+                                <strong>Planned Venting</strong><br><small style="color:var(--text-secondary);">PRV-3302, 2100ppm authorized blowdown</small>
+                            </button>
+                            <button class="btn" style="background:rgba(239,68,68,0.1);color:var(--accent-red);border:1px solid rgba(239,68,68,0.3);font-size:12px;padding:8px;text-align:left;" onclick="loadEmissionScenario('fugitive')">
+                                <strong>Fugitive Leak</strong><br><small style="color:var(--text-secondary);">FLG-4401, 850ppm + thermal + acoustic</small>
+                            </button>
+                        </div>
+
+                        <button class="btn btn-primary" id="em-submit" onclick="submitEmissionIngest()" style="width:100%;">
+                            Run Emission Pipeline (Context + Fusion + LLM + Gate + Compliance)
+                        </button>
+                        <div id="em-loading" class="hidden" style="margin-top:12px;">
+                            <span class="spinner"></span> Processing through emission surveillance pipeline...
+                        </div>
+                        <div id="em-result" class="hidden"></div>
+                    </div>
+
+                    <!-- Classification Distribution -->
+                    <div class="card">
+                        <div class="card-title">Classification Distribution</div>
+                        <div id="em-classification-dist" style="padding:12px;">
+                            <div style="color:var(--text-secondary);font-size:13px;">Load emission data to view distribution.</div>
+                        </div>
+                        <div style="margin-top:16px;">
+                            <div class="card-title">Detections by Location</div>
+                            <div id="em-location-dist" style="padding:12px;">
+                                <div style="color:var(--text-secondary);font-size:13px;">No location data yet.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Emission Event List -->
+                <div class="card">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div class="card-title" style="margin-bottom:0;">Emission Events (Latest First)</div>
+                        <div style="display:flex;gap:8px;">
+                            <select id="em-filter" onchange="loadEmissionEvents()" style="background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:12px;">
+                                <option value="all">All Events</option>
+                                <option value="fugitive">Fugitive Only</option>
+                                <option value="compliance">Pending Compliance</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="em-events-container" style="max-height:500px;overflow-y:auto;">
+                        <div style="font-size:13px;color:var(--text-secondary);padding:20px;text-align:center;">No emission events yet. Ingest sensor data or wait for demo seed data.</div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tab: Exception Inbox -->
             <div id="tab-inbox" class="tab-content">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
@@ -552,7 +703,7 @@
 
             <!-- Tab: Scale & Resilience -->
             <div id="tab-resilience" class="tab-content">
-                <div class="section-title" style="margin-bottom:16px;">Scale & Resilience — Offshore Survival Patterns</div>
+                <div class="section-title" style="margin-bottom:16px;">Experience Bank — Learning From Every Classification</div>
 
                 <!-- Resilience KPIs -->
                 <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:16px; margin-bottom:24px;">
@@ -610,6 +761,128 @@
                 </div>
             </div>
 
+            <!-- Tab: Mission Planning (Challenge 04) -->
+            <div id="tab-missions" class="tab-content">
+                <div class="section-title" style="margin-bottom:16px;">Challenge 04 — AI-Enhanced Operational Robotics</div>
+
+                <!-- Mission KPIs -->
+                <div style="display:grid; grid-template-columns: repeat(5,1fr); gap:16px; margin-bottom:24px;">
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-blue);" id="mission-total">0</div><div class="kpi-label">Total Missions</div></div>
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-green);" id="mission-completed">0</div><div class="kpi-label">Completed</div></div>
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-orange);" id="mission-active">0</div><div class="kpi-label">Active Now</div></div>
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-red);" id="mission-anomalies">—</div><div class="kpi-label">Avg Anomalies / Mission</div></div>
+                    <div class="kpi-card"><div class="kpi-value" style="color:var(--accent-purple);" id="mission-waypoints">0</div><div class="kpi-label">Total Waypoints Inspected</div></div>
+                </div>
+
+                <!-- Plan New Mission Form -->
+                <div class="card" style="border-top:3px solid var(--accent-blue); margin-bottom:24px;">
+                    <div class="card-title">Plan New AI Mission</div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap:12px; align-items:end;">
+                        <div>
+                            <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">ROBOT ID</label>
+                            <select id="mission-robot" style="width:100%;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;">
+                                <option value="spot-001">Spot-001</option>
+                                <option value="spot-002">Spot-002</option>
+                                <option value="anymal-001">ANYmal-001</option>
+                                <option value="exr-001">ExR-001</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">PLATFORM</label>
+                            <select id="mission-platform" style="width:100%;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;">
+                                <option value="SPOT">Boston Dynamics Spot</option>
+                                <option value="ANYMAL">ANYbotics ANYmal</option>
+                                <option value="EXR">ExRobotics ExR-2</option>
+                                <option value="TURTLEBOT">TurtleBot</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">FACILITY AREA</label>
+                            <select id="mission-area" style="width:100%;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;">
+                                <option value="Module A Deck 1">Module A Deck 1</option>
+                                <option value="Module B Deck 2">Module B Deck 2</option>
+                                <option value="Module C Deck 3">Module C Deck 3</option>
+                                <option value="Module D Deck 2">Module D Deck 2</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">MAX WAYPOINTS</label>
+                            <input type="number" id="mission-max-wp" value="10" min="1" max="30" style="width:100%;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;">
+                        </div>
+                        <button onclick="planMission()" style="background:var(--accent-blue);color:white;border:none;border-radius:8px;padding:10px 24px;font-weight:600;cursor:pointer;font-size:13px;white-space:nowrap;">Plan Mission</button>
+                    </div>
+                    <!-- Quick Demo Buttons -->
+                    <div style="margin-top:12px;display:flex;gap:8px;">
+                        <button onclick="loadMissionScenario('moduleB')" style="background:rgba(239,68,68,0.15);color:var(--accent-red);border:1px solid rgba(239,68,68,0.3);border-radius:6px;padding:6px 14px;font-size:11px;cursor:pointer;font-weight:600;">Demo: Module B (Critical Leak)</button>
+                        <button onclick="loadMissionScenario('moduleA')" style="background:rgba(59,130,246,0.15);color:var(--accent-blue);border:1px solid rgba(59,130,246,0.3);border-radius:6px;padding:6px 14px;font-size:11px;cursor:pointer;font-weight:600;">Demo: Module A (Rotating Equip)</button>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px;">
+                    <!-- Mission List -->
+                    <div class="card" style="max-height:600px;overflow-y:auto;">
+                        <div class="card-title">Mission History</div>
+                        <div id="mission-list-container">
+                            <div style="font-size:13px;color:var(--text-secondary);padding:20px;text-align:center;">Loading missions...</div>
+                        </div>
+                    </div>
+
+                    <!-- Risk Assessment Heat Map -->
+                    <div class="card" style="max-height:600px;overflow-y:auto;">
+                        <div class="card-title">Equipment Risk Assessment</div>
+                        <div id="risk-assessment-container">
+                            <div style="font-size:13px;color:var(--text-secondary);padding:20px;text-align:center;">Loading risk scores...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mission Detail Panel (shown when a mission is selected) -->
+                <div id="mission-detail-panel" class="card" style="display:none; margin-top:24px; border-top:3px solid var(--accent-purple);">
+                    <div class="card-title">Mission Detail</div>
+                    <div id="mission-detail-content"></div>
+                </div>
+
+                <!-- Robot Fleet Capabilities -->
+                <div class="card" style="margin-top:24px;">
+                    <div class="card-title">Robot Fleet — ISAR/Flotilla Integration</div>
+                    <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px;">
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-green);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:4px;">Spot</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Quadruped | 90 min</div>
+                            <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.2);color:var(--accent-green);">CH4</span>
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,0.2);color:var(--accent-orange);">THERMAL</span>
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(139,92,246,0.2);color:var(--accent-purple);">ACOUSTIC</span>
+                            </div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-blue);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:4px;">ANYmal</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Quadruped | 120 min</div>
+                            <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.2);color:var(--accent-green);">CH4</span>
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,0.2);color:var(--accent-orange);">THERMAL</span>
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(139,92,246,0.2);color:var(--accent-purple);">ACOUSTIC</span>
+                            </div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-orange);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:4px;">ExR-2</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Tracked | 480 min</div>
+                            <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(16,185,129,0.2);color:var(--accent-green);">CH4</span>
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(245,158,11,0.2);color:var(--accent-orange);">THERMAL</span>
+                            </div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--text-secondary);">
+                            <div style="font-size:14px;font-weight:700;color:var(--text-secondary);margin-bottom:4px;">TurtleBot</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Wheeled | 60 min</div>
+                            <div style="margin-top:8px;display:flex;gap:4px;flex-wrap:wrap;">
+                                <span style="font-size:10px;padding:2px 6px;border-radius:4px;background:rgba(100,116,139,0.2);color:var(--text-secondary);">VISUAL ONLY</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Tab: Audit Trail -->
             <div id="tab-audit" class="tab-content">
                 <div class="section-title" style="margin-bottom:16px;">Audit Trail — Immutable Classification Record</div>
@@ -629,7 +902,7 @@
                                 <option value="rejected">Gate Rejected</option>
                             </select>
                             <button class="btn" onclick="loadAuditLogs()" style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:4px 12px;font-size:11px;">Refresh</button>
-                            <button class="btn" onclick="window.open(API + '/api/v1/audit/export/csv')" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:4px 12px;font-size:11px;">Export CSV</button>
+                            <button class="btn" onclick="downloadCsv()" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:4px 12px;font-size:11px;">Export CSV</button>
                         </div>
                     </div>
                     <div id="audit-logs-container" style="max-height:600px;overflow-y:auto;">
@@ -729,6 +1002,153 @@
                 </div>
             </div>
 
+            <!-- Tab: Roadmap -->
+            <div id="tab-roadmap" class="tab-content">
+                <div class="section-title" style="margin-bottom:24px;">Future Roadmap — Where Structured Data Takes Us</div>
+
+                <!-- Current: What's Live -->
+                <div class="card" style="border-top:3px solid var(--accent-green); margin-bottom:24px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE NOW</span>
+                        <span class="card-title" style="margin-bottom:0;">Challenge 01 — Free-Text to Structured Intelligence</span>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-green);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">Semantic Analysis</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Mistral 7B classifies free-text SAP notifications into ISO 14224 failure codes. Bilingual EN/NO support.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-orange);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">Reflector Gate</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Deterministic 0.85 confidence threshold. Binary pass/fail. Zero hallucination into SAP.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-purple);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-purple);margin-bottom:6px;">Experience Bank</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Growing semantic cache. Senior Engineer corrections feed back. System improves with every review.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-blue);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">SAP Write-Back</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Clean Core compliant BAPI integration. Structured failure codes written to SAP without ERP modification.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Challenge 02: Emission Surveillance (LIVE) -->
+                <div class="card" style="border-top:3px solid var(--accent-green); margin-bottom:24px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE NOW</span>
+                        <span class="card-title" style="margin-bottom:0;">Challenge 02 — Contextual Emission Surveillance</span>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
+                        Robot-acquired sensor data from Equinor's ISAR/Flotilla platforms is enriched with <strong style="color:var(--text-primary);">SAP operational context</strong>, processed through <strong style="color:var(--text-primary);">multi-modal sensor fusion</strong>, and classified by Mistral 7B into emission categories. The system distinguishes real fugitive leaks from planned venting, maintenance activity, and sensor artifacts — generating <strong style="color:var(--text-primary);">EU 2024/1787 compliance records</strong> automatically.
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-green);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">Multi-Modal Fusion</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">CH4 + thermal + acoustic sensor correlation for high-confidence classification. 3-sensor convergence = 0.92+ confidence.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-orange);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">SAP Context Engine</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Active work orders, turnaround schedule, and maintenance history from SAP suppress 60%+ false positives.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-purple);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-purple);margin-bottom:6px;">Leak Quantification</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Physics-based kg/hr estimation using concentration, distance, and equipment type factors. EU 2024/1787 mandated.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-blue);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">Compliance Automation</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">72-hour response tracking, auto-generated compliance records, and SAP work orders for confirmed fugitive emissions.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Challenge 04: AI-Enhanced Operational Robotics (LIVE) -->
+                <div class="card" style="border-top:3px solid var(--accent-green); margin-bottom:24px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE NOW</span>
+                        <span class="card-title" style="margin-bottom:0;">Challenge 04 — AI-Enhanced Operational Robotics</span>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
+                        Moving from scripted patrol routes to <strong style="color:var(--text-primary);">intelligent, risk-driven mission planning</strong>. Loom Link scores every equipment item using emission history, RUL forecasts, and SAP context, then generates optimized inspection routes for <strong style="color:var(--text-primary);">ISAR/Flotilla-compatible</strong> robots. The circular intelligence loop: Challenge 01 feeds RUL data → Challenge 04 prioritizes inspections → Challenge 02 classifies findings → back to Challenge 01.
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-green);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">Risk Scoring Engine</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">6-dimensional equipment risk assessment: emission history, trend, RUL, recency, criticality, work orders.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-orange);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">ISAR Mission Generation</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">AI-generated mission definitions compatible with Equinor's ISAR robot interface for direct dispatch.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-purple);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-purple);margin-bottom:6px;">Multi-Platform Fleet</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Spot, ANYmal, ExR-2, TurtleBot — sensor capability matching and battery-aware mission planning.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-blue);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">Adaptive Prioritization</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Highest-risk equipment inspected first. Auto-approve for low-risk missions. Human-in-loop for critical.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 2: Scheduling -->
+                <div class="card" style="border-top:3px solid var(--accent-orange); margin-bottom:24px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(245,158,11,0.2);color:var(--accent-orange);font-weight:700;">PHASE 2</span>
+                        <span class="card-title" style="margin-bottom:0;">Work Planning & Scheduling Optimization</span>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
+                        With structured failure data now flowing reliably into SAP, the next phase optimizes <strong style="color:var(--text-primary);">when</strong> and <strong style="color:var(--text-primary);">how</strong> maintenance work gets executed. AI-driven scheduling will spread workload evenly across crews and shifts, matching maintenance urgency to available capacity.
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">Workload Balancing</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Optimize crew scheduling across facility maintenance windows. Spread work orders evenly to prevent bottlenecks.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">Priority-Based Execution</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Risk-weighted prioritization using failure severity, asset criticality, and RUL forecasts to sequence work orders.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">Capacity Forecasting</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Predict maintenance demand from failure patterns to staff the right skills at the right time on each platform.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Phase 3: PM Programs -->
+                <div class="card" style="border-top:3px solid var(--accent-blue); margin-bottom:24px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(59,130,246,0.2);color:var(--accent-blue);font-weight:700;">PHASE 3</span>
+                        <span class="card-title" style="margin-bottom:0;">PM Program Generation for New Assets</span>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
+                        Leverage the Experience Bank to create preventive maintenance programs for green field projects. The system searches existing equipment programs on similar assets, checks specifications, and recommends appropriate PM programs with intervals — all integrated with SAP/Fiori.
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">Cross-Asset Matching</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Find similar equipment across the fleet using semantic similarity. Match pump types, compressor classes, valve configurations.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">Interval Recommendation</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Recommend maintenance intervals based on actual failure history, not calendar assumptions. Data-driven PM programs.</div>
+                        </div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">SAP/Fiori Integration</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Generated PM programs written directly to SAP via BAPI. Accessible through existing Fiori apps. Zero workflow disruption.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vision -->
+                <div class="card" style="text-align:center;padding:32px;background:linear-gradient(135deg, rgba(13,148,136,0.1), rgba(139,92,246,0.1));border:1px solid rgba(13,148,136,0.3);">
+                    <div style="font-size:24px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Minimal Human Interface by 2026</div>
+                    <div style="font-size:14px;color:var(--text-secondary);max-width:700px;margin:0 auto;line-height:1.6;">
+                        Structured data is the foundation. Scheduling optimization is the multiplier. PM program generation closes the loop. Each phase builds on the intelligence created by the one before it — all running locally on the sovereign node, all integrated through SAP Clean Core.
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
 
@@ -743,6 +1163,26 @@ function apiFetch(url, options = {}) {
         'X-API-Key': API_KEY
     };
     return fetch(url, options);
+}
+
+// CSV download via authenticated fetch (browser window.open can't send headers)
+async function downloadCsv() {
+    try {
+        const res = await apiFetch(API + '/api/v1/audit/export/csv');
+        if (!res.ok) throw new Error('Export failed');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const disposition = res.headers.get('Content-Disposition');
+        a.download = disposition ? disposition.split('filename=')[1].replace(/"/g, '') : 'loom-link-audit.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    } catch (e) {
+        alert('CSV export failed: ' + e.message);
+    }
 }
 
 let assets = [];
@@ -765,11 +1205,19 @@ let pipelineHistory = [];
 
 // ── Init ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+    // Load assets first (needed by other views), then everything else in parallel
     await loadAssets();
-    await loadStats();
-    await loadFleetRul();
-    await checkDemoMode();
-    await loadInboxBadge();
+    Promise.allSettled([
+        loadStats(),
+        loadTopKpis(),
+        loadFleetRul(),
+        checkDemoMode(),
+        loadInboxBadge()
+    ]).then(results => {
+        results.forEach((r, i) => {
+            if (r.status === 'rejected') console.error('Init task ' + i + ' failed:', r.reason);
+        });
+    });
 });
 
 async function loadInboxBadge() {
@@ -834,9 +1282,12 @@ async function loadAssets() {
 async function loadStats() {
     try {
         const res = await apiFetch(API + '/api/v1/dashboard/stats');
+        if (!res.ok) throw new Error('Stats endpoint returned ' + res.status);
         const stats = await res.json();
-        document.getElementById('kpi-assets').textContent = stats.totalAssets;
-        document.getElementById('kpi-recovered').textContent = stats.legacyRecoveredRecords;
+        const kpiAssets = document.getElementById('kpi-assets');
+        const kpiRecovered = document.getElementById('kpi-recovered');
+        if (kpiAssets) kpiAssets.textContent = stats.totalAssets;
+        if (kpiRecovered) kpiRecovered.textContent = stats.legacyRecoveredRecords;
         document.getElementById('stats-panel').innerHTML = `
             <div style="font-size:13px;">
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
@@ -858,7 +1309,29 @@ async function loadStats() {
                     <span style="color:var(--text-secondary)">Gate Threshold</span><span style="color:var(--accent-blue)">${stats.reflectorGateThreshold}</span>
                 </div>
             </div>`;
-    } catch(e) { console.error('Failed to load stats:', e); }
+    } catch(e) {
+        console.error('Failed to load stats:', e);
+        document.getElementById('stats-panel').innerHTML =
+            '<div style="font-size:12px;color:var(--accent-orange);padding:8px;">Stats temporarily unavailable. Retrying...</div>';
+        setTimeout(loadStats, 3000);
+    }
+}
+
+async function loadTopKpis() {
+    try {
+        const [auditRes, cacheRes] = await Promise.all([
+            apiFetch(API + '/api/v1/audit/stats'),
+            apiFetch(API + '/api/v1/resilience/cache/stats')
+        ]);
+        const audit = await auditRes.json();
+        const cache = await cacheRes.json();
+        document.getElementById('kpi-total').textContent = audit.totalClassifications || 0;
+        document.getElementById('kpi-passed').textContent = audit.passed || 0;
+        document.getElementById('kpi-rejected').textContent = audit.rejected || 0;
+        document.getElementById('kpi-cache').textContent = cache.cacheSize || cache.size || 0;
+    } catch(e) {
+        console.warn('KPI load failed:', e);
+    }
 }
 
 async function loadFleetRul() {
@@ -1211,6 +1684,9 @@ ${data.queuedForRetry ? `\n<span style="color:var(--accent-orange);font-weight:7
         const numInput = document.getElementById('test-notif-number');
         numInput.value = String(parseInt(numInput.value) + 1);
 
+        // Refresh KPIs to show updated counts
+        await loadTopKpis();
+
     } catch(e) {
         resultDiv.className = 'pipeline-result result-reject';
         resultDiv.textContent = 'Error: ' + e.message + '\n\nEnsure the Spring Boot server is running on port 8080\nand the HM90 node is reachable at 100.64.132.128:11434';
@@ -1487,6 +1963,8 @@ function switchTab(name) {
     event.target.classList.add('active');
     if (name === 'inbox') loadExceptionInbox();
     if (name === 'resilience') loadResilienceData();
+    if (name === 'emissions') loadEmissionData();
+    if (name === 'missions') loadMissionData();
     if (name === 'audit') loadAuditLogs();
     if (name === 'analytics') loadAnalytics();
     if (name === 'health') loadHealthData();
@@ -1509,7 +1987,7 @@ async function loadAuditLogs() {
         if (filter === 'passed') url = API + '/api/v1/audit/logs/gate/true';
         else if (filter === 'rejected') url = API + '/api/v1/audit/logs/gate/false';
 
-        const logsRes = await fetch(url);
+        const logsRes = await apiFetch(url);
         const logs = await logsRes.json();
         const container = document.getElementById('audit-logs-container');
 
@@ -1679,6 +2157,502 @@ async function loadHealthData() {
         document.getElementById('health-overall').textContent = 'ERROR';
         document.getElementById('health-overall').style.color = 'var(--accent-red)';
     }
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CHALLENGE 02: EMISSION SURVEILLANCE
+// ══════════════════════════════════════════════════════════════════
+
+let emissionHistory = [];
+
+async function loadEmissionData() {
+    await Promise.all([
+        loadEmissionStats(),
+        loadEmissionEvents()
+    ]);
+}
+
+async function loadEmissionStats() {
+    try {
+        const res = await apiFetch(API + '/api/v1/emissions/stats');
+        const stats = await res.json();
+        document.getElementById('em-kpi-total').textContent = stats.totalEvents || 0;
+        document.getElementById('em-kpi-fugitive').textContent = stats.fugitiveEmissions || 0;
+        document.getElementById('em-kpi-suppressed').textContent = stats.falsePositivesSuppressed || 0;
+        document.getElementById('em-kpi-confidence').textContent = stats.averageConfidence ? (stats.averageConfidence * 100).toFixed(1) + '%' : '0%';
+
+        // Count compliance records (fugitive + documented)
+        let complianceCount = stats.fugitiveEmissions || 0;
+        document.getElementById('em-kpi-compliance').textContent = complianceCount;
+
+        // Classification distribution
+        const dist = stats.eventsByClassification || {};
+        const distContainer = document.getElementById('em-classification-dist');
+        if (Object.keys(dist).length > 0) {
+            const colors = {
+                'FUGITIVE_EMISSION': 'var(--accent-red)',
+                'PLANNED_VENTING': 'var(--accent-blue)',
+                'MAINTENANCE_ACTIVITY': 'var(--accent-orange)',
+                'SENSOR_ARTIFACT': 'var(--accent-purple)',
+                'NORMAL_PROCESS': 'var(--accent-green)',
+                'UNKNOWN': 'var(--text-secondary)'
+            };
+            const labels = {
+                'FUGITIVE_EMISSION': 'Fugitive Leak',
+                'PLANNED_VENTING': 'Planned Venting',
+                'MAINTENANCE_ACTIVITY': 'Maintenance',
+                'SENSOR_ARTIFACT': 'Sensor Artifact',
+                'NORMAL_PROCESS': 'Normal Process',
+                'UNKNOWN': 'Unknown'
+            };
+            const total = Object.values(dist).reduce((a,b) => a + b, 0);
+            distContainer.innerHTML = Object.entries(dist).map(([cls, count]) => {
+                const pct = total > 0 ? ((count / total) * 100).toFixed(0) : 0;
+                return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                    <div style="width:14px;height:14px;border-radius:3px;background:${colors[cls] || 'var(--text-secondary)'};flex-shrink:0;"></div>
+                    <div style="flex:1;font-size:13px;">${labels[cls] || cls}</div>
+                    <div style="font-weight:700;font-size:14px;color:${colors[cls] || 'var(--text-secondary)'};">${count}</div>
+                    <div style="width:100px;height:6px;background:var(--bg-primary);border-radius:3px;overflow:hidden;">
+                        <div style="width:${pct}%;height:100%;background:${colors[cls] || 'var(--text-secondary)'};border-radius:3px;"></div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-secondary);width:30px;text-align:right;">${pct}%</div>
+                </div>`;
+            }).join('');
+        }
+
+        // Location distribution
+        const locDist = stats.eventsByLocation || {};
+        const locContainer = document.getElementById('em-location-dist');
+        if (Object.keys(locDist).length > 0) {
+            const locTotal = Object.values(locDist).reduce((a,b) => a + b, 0);
+            locContainer.innerHTML = Object.entries(locDist).map(([loc, count]) => {
+                const pct = locTotal > 0 ? ((count / locTotal) * 100).toFixed(0) : 0;
+                return `<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                    <div style="flex:1;font-size:13px;">${loc}</div>
+                    <div style="font-weight:600;font-size:13px;">${count}</div>
+                    <div style="width:80px;height:5px;background:var(--bg-primary);border-radius:3px;overflow:hidden;">
+                        <div style="width:${pct}%;height:100%;background:var(--accent-blue);border-radius:3px;"></div>
+                    </div>
+                </div>`;
+            }).join('');
+        }
+    } catch(e) {
+        console.error('Emission stats load error:', e);
+    }
+}
+
+async function loadEmissionEvents() {
+    try {
+        const filter = document.getElementById('em-filter').value;
+        let url = API + '/api/v1/emissions';
+        if (filter === 'compliance') url = API + '/api/v1/emissions/compliance/pending';
+
+        const res = await apiFetch(url);
+        const events = await res.json();
+        const container = document.getElementById('em-events-container');
+
+        let filteredEvents = events;
+        if (filter === 'fugitive') {
+            filteredEvents = events.filter(e => e.classification === 'FUGITIVE_EMISSION');
+        }
+
+        if (filteredEvents.length === 0) {
+            container.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);padding:20px;text-align:center;">No emission events match the current filter.</div>';
+            return;
+        }
+
+        container.innerHTML = filteredEvents.map(ev => {
+            const clsColors = {
+                'FUGITIVE_EMISSION': 'var(--accent-red)',
+                'PLANNED_VENTING': 'var(--accent-blue)',
+                'MAINTENANCE_ACTIVITY': 'var(--accent-orange)',
+                'SENSOR_ARTIFACT': 'var(--accent-purple)',
+                'NORMAL_PROCESS': 'var(--accent-green)',
+                'UNKNOWN': 'var(--text-secondary)'
+            };
+            const clsColor = clsColors[ev.classification] || 'var(--text-secondary)';
+            const gateColor = ev.gatePassed ? 'var(--accent-green)' : 'var(--accent-red)';
+            const trendIcon = ev.trendDirection === 'ESCALATING' ? '&#9650;' : ev.trendDirection === 'DECLINING' ? '&#9660;' : '&#9644;';
+            const trendColor = ev.trendDirection === 'ESCALATING' ? 'var(--accent-red)' : ev.trendDirection === 'DECLINING' ? 'var(--accent-green)' : 'var(--text-secondary)';
+
+            return `<div class="card" style="margin-bottom:10px;border-left:4px solid ${clsColor};padding:14px;">
+                <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
+                    <div>
+                        <span style="font-weight:700;font-size:15px;">${ev.equipmentTag}</span>
+                        <span style="margin-left:8px;font-size:12px;color:var(--text-secondary);">${ev.locationArea || ''}</span>
+                        <span style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(59,130,246,0.1);color:var(--accent-blue);">${ev.robotId || 'robot'}</span>
+                    </div>
+                    <div style="display:flex;gap:6px;align-items:center;">
+                        <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;background:${clsColor}20;color:${clsColor};">${(ev.classification || 'UNKNOWN').replace(/_/g,' ')}</span>
+                        <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;background:${gateColor}20;color:${gateColor};">${ev.gatePassed ? 'GATE PASSED' : 'GATE REJECTED'}</span>
+                        ${ev.complianceReportGenerated ? '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(16,185,129,0.15);color:var(--accent-green);font-weight:600;">EU DOCUMENTED</span>' : ''}
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:8px;font-size:12px;">
+                    <div><span style="color:var(--text-secondary);">Sensor:</span> <strong>${ev.sensorModality || '?'}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Reading:</span> <strong style="color:${clsColor};">${ev.rawReading} ${ev.readingUnit || 'ppm'}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Confidence:</span> <strong>${ev.confidence ? (ev.confidence * 100).toFixed(1) + '%' : 'N/A'}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Sensors:</span> <strong>${ev.corroboratingSensors || 1}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Trend:</span> <span style="color:${trendColor};font-weight:600;">${trendIcon} ${ev.trendDirection || 'N/A'}</span></div>
+                    <div><span style="color:var(--text-secondary);">Leak Rate:</span> <strong>${ev.estimatedLeakRateKgHr ? ev.estimatedLeakRateKgHr.toFixed(2) + ' kg/hr' : 'N/A'}</strong></div>
+                </div>
+                ${ev.reasoning ? `<div style="margin-top:8px;font-size:12px;color:var(--text-secondary);font-style:italic;line-height:1.5;">${(ev.reasoning || '').substring(0, 200)}${(ev.reasoning || '').length > 200 ? '...' : ''}</div>` : ''}
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                    <div style="font-size:11px;color:var(--text-secondary);">
+                        ${ev.sapWorkOrderNumber ? '<span style="color:var(--accent-blue);font-weight:600;">WO: ' + ev.sapWorkOrderNumber + '</span> | ' : ''}
+                        Mission: ${ev.missionId || 'N/A'} | Compliance: ${ev.complianceStatus || 'N/A'} | ${ev.detectedAt ? new Date(ev.detectedAt).toLocaleString() : ''}
+                    </div>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:3px 10px;font-size:11px;" onclick="confirmEmission('${ev.id}')">Confirm</button>
+                        <button class="btn" style="background:var(--bg-primary);color:var(--text-secondary);border:1px solid var(--border);padding:3px 10px;font-size:11px;" onclick="dismissEmission('${ev.id}')">Dismiss</button>
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        console.error('Emission events load error:', e);
+    }
+}
+
+function loadEmissionScenario(scenario) {
+    const scenarios = {
+        maintenance: { equipment: 'VLV-2203', modality: 'CH4', reading: 450, location: 'Module C Deck 3', robot: 'spot-002', mission: 'PATROL-2026-Q1-088' },
+        artifact: { equipment: 'PST-1105', modality: 'CH4', reading: 180, location: 'Module A Deck 1', robot: 'anymal-001', mission: 'PATROL-2026-Q1-089' },
+        venting: { equipment: 'PRV-3302', modality: 'CH4', reading: 2100, location: 'Module D Deck 2', robot: 'spot-001', mission: 'PATROL-2026-Q1-090' },
+        fugitive: { equipment: 'FLG-4401', modality: 'CH4', reading: 850, location: 'Module B Deck 2', robot: 'spot-001', mission: 'PATROL-2026-Q1-087' }
+    };
+    const s = scenarios[scenario];
+    if (!s) return;
+
+    document.getElementById('em-equipment').value = s.equipment;
+    document.getElementById('em-modality').value = s.modality;
+    document.getElementById('em-reading').value = s.reading;
+    document.getElementById('em-location').value = s.location;
+    document.getElementById('em-robot').value = s.robot;
+    document.getElementById('em-mission').value = s.mission;
+}
+
+async function submitEmissionIngest() {
+    const btn = document.getElementById('em-submit');
+    const loading = document.getElementById('em-loading');
+    const resultDiv = document.getElementById('em-result');
+
+    btn.disabled = true;
+    loading.classList.remove('hidden');
+    resultDiv.classList.add('hidden');
+
+    const payload = {
+        inspectionId: 'INSP-' + Date.now(),
+        missionId: document.getElementById('em-mission').value,
+        robotId: document.getElementById('em-robot').value,
+        equipmentTag: document.getElementById('em-equipment').value,
+        locationArea: document.getElementById('em-location').value,
+        sensorModality: document.getElementById('em-modality').value,
+        rawReading: parseFloat(document.getElementById('em-reading').value),
+        readingUnit: 'ppm',
+        detectedAt: new Date().toISOString(),
+        windSpeedKmh: 8.5,
+        windDirection: 'NW',
+        ambientTempCelsius: 12.0
+    };
+
+    try {
+        const res = await apiFetch(API + '/api/v1/emissions/ingest', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        const clsColors = {
+            'FUGITIVE_EMISSION': 'var(--accent-red)',
+            'PLANNED_VENTING': 'var(--accent-blue)',
+            'MAINTENANCE_ACTIVITY': 'var(--accent-orange)',
+            'SENSOR_ARTIFACT': 'var(--accent-purple)',
+            'NORMAL_PROCESS': 'var(--accent-green)',
+            'UNKNOWN': 'var(--text-secondary)'
+        };
+        const clsColor = clsColors[data.classification] || 'var(--text-secondary)';
+        const passed = data.gatePassed;
+        const resultClass = passed ? 'result-pass' : 'result-reject';
+
+        resultDiv.className = 'pipeline-result ' + resultClass;
+        resultDiv.innerHTML = `<span style="font-size:16px;font-weight:700;color:${passed ? 'var(--accent-green)' : 'var(--accent-red)'};">
+${passed ? '&#9989; EMISSION GATE: PASSED' : '&#128721; EMISSION GATE: REJECTED'}${data.complianceGenerated ? ' — EU 2024/1787 Compliance Record Generated' : ''}
+</span>
+
+<span style="color:var(--text-secondary);">Event ID:</span>      ${data.eventId}
+<span style="color:var(--text-secondary);">Equipment:</span>     ${data.equipmentTag} (${data.locationArea})
+<span style="color:var(--text-secondary);">Robot:</span>         ${data.robotId} | Mission: ${data.missionId}
+<span style="color:var(--text-secondary);">Sensor:</span>        ${data.sensorModality} = ${data.rawReading} ${data.readingUnit}
+
+<span style="color:${clsColor};font-weight:700;font-size:15px;">Classification: ${(data.classification || '').replace(/_/g, ' ')}</span>
+<span style="color:var(--text-secondary);">Confidence:</span>    <span style="font-weight:700;font-size:15px;color:${passed ? 'var(--accent-green)' : 'var(--accent-red)'};">${data.confidence ? (data.confidence * 100).toFixed(1) : '0.0'}%</span> ${passed ? '&#8805;' : '<'} 80.0% threshold
+<span style="color:var(--text-secondary);">Reasoning:</span>     ${data.reasoning || 'N/A'}
+<span style="color:var(--text-secondary);">Gate Verdict:</span>  ${data.gateReasoning || 'N/A'}
+
+<span style="color:var(--accent-purple);font-weight:600;">Multi-Modal Fusion:</span>
+<span style="color:var(--text-secondary);">  Corroborating Sensors:</span> ${data.corroboratingSensors || 1}
+<span style="color:var(--text-secondary);">  Trend Direction:</span>      ${data.trendDirection || 'N/A'}
+<span style="color:var(--text-secondary);">  Est. Leak Rate:</span>       ${data.estimatedLeakRateKgHr ? data.estimatedLeakRateKgHr.toFixed(3) + ' kg/hr' : 'N/A'}
+
+<span style="color:var(--text-secondary);">Compliance:</span>    ${data.complianceStatus} ${data.complianceGenerated ? '| EU 2024/1787 Record Generated' : ''}
+${data.workOrderNumber ? '<span style="color:var(--accent-blue);font-weight:700;">SAP Work Order: ' + data.workOrderNumber + '</span>' : ''}
+<span style="color:var(--text-secondary);">Pipeline Time:</span> ${data.totalPipelineLatencyMs}ms
+<span style="color:var(--text-secondary);">Model:</span>         ${data.modelId || 'mistral:7b'} (HM90 Sovereign Node)`;
+
+        resultDiv.classList.remove('hidden');
+
+        // Refresh emission data
+        await loadEmissionData();
+    } catch(e) {
+        resultDiv.className = 'pipeline-result result-reject';
+        resultDiv.textContent = 'Error: ' + e.message + '\n\nEnsure the Spring Boot server is running.';
+        resultDiv.classList.remove('hidden');
+    }
+
+    btn.disabled = false;
+    loading.classList.add('hidden');
+}
+
+async function confirmEmission(id) {
+    try {
+        const res = await apiFetch(API + '/api/v1/emissions/' + id + '/confirm', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewedBy: 'lars.henriksen', notes: 'Confirmed via dashboard' })
+        });
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error('Confirm returned ' + res.status + ':', errText);
+            alert('Confirm failed: ' + res.status + ' — ' + errText.substring(0, 200));
+            return;
+        }
+        await loadEmissionEvents();
+    } catch(e) { console.error('Confirm failed:', e); alert('Confirm failed: ' + e.message); }
+}
+
+async function dismissEmission(id) {
+    try {
+        const res = await apiFetch(API + '/api/v1/emissions/' + id + '/dismiss', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reviewedBy: 'lars.henriksen', notes: 'Dismissed via dashboard review' })
+        });
+        if (!res.ok) {
+            const errText = await res.text();
+            console.error('Dismiss returned ' + res.status + ':', errText);
+            alert('Dismiss failed: ' + res.status + ' — ' + errText.substring(0, 200));
+            return;
+        }
+        await loadEmissionEvents();
+    } catch(e) { console.error('Dismiss failed:', e); alert('Dismiss failed: ' + e.message); }
+}
+
+// ── Challenge 04: Mission Planning ─────────────────────────────
+
+async function loadMissionData() {
+    await Promise.all([loadMissionStats(), loadMissionList(), loadRiskAssessments()]);
+}
+
+async function loadMissionStats() {
+    try {
+        const res = await apiFetch(API + '/api/v1/missions/stats');
+        const s = await res.json();
+        document.getElementById('mission-total').textContent = s.totalMissions || 0;
+        document.getElementById('mission-completed').textContent = s.completedMissions || 0;
+        document.getElementById('mission-active').textContent = s.activeMissions || 0;
+        document.getElementById('mission-anomalies').textContent = s.avgAnomaliesPerMission != null ? s.avgAnomaliesPerMission.toFixed(1) : '—';
+        document.getElementById('mission-waypoints').textContent = s.totalWaypointsInspected || 0;
+    } catch(e) { console.error('Mission stats error:', e); }
+}
+
+async function loadMissionList() {
+    try {
+        const res = await apiFetch(API + '/api/v1/missions');
+        const missions = await res.json();
+        const container = document.getElementById('mission-list-container');
+
+        if (!missions.length) {
+            container.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);padding:20px;text-align:center;">No missions yet. Plan a new mission above.</div>';
+            return;
+        }
+
+        container.innerHTML = missions.map(m => {
+            const statusColors = { COMPLETED: 'var(--accent-green)', IN_PROGRESS: 'var(--accent-blue)', READY: 'var(--accent-orange)', PLANNING: 'var(--text-secondary)', DISPATCHED: 'var(--accent-purple)', ABORTED: 'var(--accent-red)', FAILED: 'var(--accent-red)' };
+            const sc = statusColors[m.status] || 'var(--text-secondary)';
+            return `<div onclick="showMissionDetail('${m.id}')" style="padding:14px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;cursor:pointer;transition:all 0.2s;border-left:3px solid ${sc};" onmouseover="this.style.background='rgba(59,130,246,0.1)'" onmouseout="this.style.background='transparent'">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="font-size:14px;font-weight:600;">${m.missionName}</span>
+                    <span style="font-size:10px;padding:3px 8px;border-radius:6px;background:rgba(${m.status==='COMPLETED'?'16,185,129':m.status==='READY'?'245,158,11':'59,130,246'},0.2);color:${sc};font-weight:700;">${m.status}</span>
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary);display:flex;gap:16px;">
+                    <span>Robot: ${m.robotId}</span>
+                    <span>Waypoints: ${m.waypointsCompleted}/${m.waypointCount}</span>
+                    <span>Risk: ${(m.missionRiskScore*100).toFixed(0)}%</span>
+                    ${m.anomaliesConfirmed > 0 ? `<span style="color:var(--accent-red);">Anomalies: ${m.anomaliesConfirmed}</span>` : ''}
+                </div>
+                ${m.status === 'READY' ? `<button onclick="event.stopPropagation();dispatchMission('${m.id}')" style="margin-top:8px;background:var(--accent-green);color:white;border:none;border-radius:6px;padding:6px 16px;font-size:11px;cursor:pointer;font-weight:600;">Dispatch to Robot</button>` : ''}
+            </div>`;
+        }).join('');
+    } catch(e) {
+        console.error('Mission list error:', e);
+        document.getElementById('mission-list-container').innerHTML =
+            '<div style="font-size:12px;color:var(--accent-orange);padding:20px;text-align:center;">Failed to load missions. Check console for details.</div>';
+    }
+}
+
+async function loadRiskAssessments() {
+    try {
+        const res = await apiFetch(API + '/api/v1/missions/risk-assessment');
+        const risks = await res.json();
+        const container = document.getElementById('risk-assessment-container');
+
+        if (!risks.length) {
+            container.innerHTML = '<div style="font-size:13px;color:var(--text-secondary);padding:20px;text-align:center;">No equipment data available for risk assessment.</div>';
+            return;
+        }
+
+        container.innerHTML = risks.slice(0, 15).map(r => {
+            const pColors = { CRITICAL: 'var(--accent-red)', HIGH: 'var(--accent-orange)', MEDIUM: '#eab308', LOW: 'var(--accent-green)', DEFERRED: 'var(--text-secondary)' };
+            const pc = pColors[r.priority] || 'var(--text-secondary)';
+            const barW = Math.max(r.riskScore * 100, 5);
+            return `<div style="padding:10px;border:1px solid var(--border);border-radius:6px;margin-bottom:6px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                    <div>
+                        <span style="font-size:13px;font-weight:600;">${r.equipmentTag}</span>
+                        <span style="font-size:11px;color:var(--text-secondary);margin-left:8px;">${r.assetName || ''}</span>
+                    </div>
+                    <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(${r.priority==='CRITICAL'?'239,68,68':r.priority==='HIGH'?'245,158,11':'16,185,129'},0.2);color:${pc};font-weight:700;">${r.priority}</span>
+                </div>
+                <div style="background:var(--bg-primary);border-radius:4px;height:6px;overflow:hidden;">
+                    <div style="width:${barW}%;height:100%;background:${pc};border-radius:4px;transition:width 0.5s;"></div>
+                </div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">${r.reasoning ? r.reasoning.substring(0,120) : ''}</div>
+            </div>`;
+        }).join('');
+    } catch(e) { console.error('Risk assessment error:', e); }
+}
+
+async function planMission() {
+    try {
+        const body = {
+            robotId: document.getElementById('mission-robot').value,
+            platform: document.getElementById('mission-platform').value,
+            facilityArea: document.getElementById('mission-area').value,
+            maxWaypoints: parseInt(document.getElementById('mission-max-wp').value) || 10
+        };
+        const res = await apiFetch(API + '/api/v1/missions/plan', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        const mission = await res.json();
+        await loadMissionData();
+        showMissionDetail(mission.id);
+    } catch(e) { console.error('Plan mission failed:', e); alert('Mission planning failed: ' + e.message); }
+}
+
+async function dispatchMission(missionId) {
+    try {
+        await apiFetch(API + '/api/v1/missions/' + missionId + '/dispatch?operatorId=lars.henriksen', { method: 'POST' });
+        await loadMissionData();
+    } catch(e) { console.error('Dispatch failed:', e); }
+}
+
+function loadMissionScenario(scenario) {
+    if (scenario === 'moduleB') {
+        document.getElementById('mission-robot').value = 'spot-001';
+        document.getElementById('mission-platform').value = 'SPOT';
+        document.getElementById('mission-area').value = 'Module B Deck 2';
+        document.getElementById('mission-max-wp').value = '10';
+    } else if (scenario === 'moduleA') {
+        document.getElementById('mission-robot').value = 'anymal-001';
+        document.getElementById('mission-platform').value = 'ANYMAL';
+        document.getElementById('mission-area').value = 'Module A Deck 1';
+        document.getElementById('mission-max-wp').value = '8';
+    }
+}
+
+async function showMissionDetail(missionId) {
+    try {
+        const res = await apiFetch(API + '/api/v1/missions');
+        const missions = await res.json();
+        const m = missions.find(x => x.id === missionId);
+        if (!m) return;
+
+        const panel = document.getElementById('mission-detail-panel');
+        const content = document.getElementById('mission-detail-content');
+        panel.style.display = 'block';
+
+        const statusColors = { COMPLETED: 'var(--accent-green)', IN_PROGRESS: 'var(--accent-blue)', READY: 'var(--accent-orange)', PLANNING: 'var(--text-secondary)', DISPATCHED: 'var(--accent-purple)' };
+        const sc = statusColors[m.status] || 'var(--text-secondary)';
+
+        let waypointHtml = '';
+        if (m.waypoints && m.waypoints.length) {
+            waypointHtml = m.waypoints.map((wp, i) => {
+                const pColors = { CRITICAL: 'var(--accent-red)', HIGH: 'var(--accent-orange)', MEDIUM: '#eab308', LOW: 'var(--accent-green)', DEFERRED: 'var(--text-secondary)' };
+                const wpc = pColors[wp.priority] || 'var(--text-secondary)';
+                return `<div style="padding:12px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;border-left:3px solid ${wpc};${wp.completed?'background:rgba(16,185,129,0.05);':''}">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <span style="font-size:11px;color:var(--text-secondary);margin-right:8px;">#${wp.sequenceOrder}</span>
+                            <span style="font-size:14px;font-weight:600;">${wp.equipmentTag}</span>
+                            <span style="font-size:12px;color:var(--text-secondary);margin-left:8px;">${wp.equipmentName || ''}</span>
+                        </div>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(59,130,246,0.15);color:var(--accent-blue);">${wp.isarTaskType}</span>
+                            <span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(${wp.priority==='CRITICAL'?'239,68,68':wp.priority==='HIGH'?'245,158,11':'16,185,129'},0.2);color:${wpc};font-weight:700;">${wp.priority}</span>
+                            ${wp.completed ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(16,185,129,0.2);color:var(--accent-green);">DONE</span>' : ''}
+                            ${wp.anomalyDetected ? '<span style="font-size:10px;padding:2px 8px;border-radius:4px;background:rgba(239,68,68,0.2);color:var(--accent-red);font-weight:700;">ANOMALY</span>' : ''}
+                        </div>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:6px;">
+                        Sensors: ${wp.recommendedSensors || '—'} | Dwell: ${wp.dwellSeconds}s | Risk: ${(wp.riskScore*100).toFixed(0)}%
+                        ${wp.daysSinceLastInspection != null ? ' | Last inspected: ' + wp.daysSinceLastInspection + 'd ago' : ''}
+                    </div>
+                    ${wp.findingSummary ? `<div style="font-size:11px;margin-top:6px;padding:8px;background:var(--bg-primary);border-radius:6px;color:var(--text-primary);">${wp.findingSummary}</div>` : ''}
+                    ${wp.riskReasoning ? `<div style="font-size:10px;color:var(--text-secondary);margin-top:4px;font-style:italic;">${wp.riskReasoning}</div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        content.innerHTML = `
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <div>
+                    <div style="font-size:20px;font-weight:700;">${m.missionName}</div>
+                    <div style="font-size:13px;color:var(--text-secondary);">Robot: ${m.robotId} (${m.robotPlatform}) | Area: ${m.facilityArea}</div>
+                </div>
+                <span style="font-size:12px;padding:4px 12px;border-radius:8px;background:rgba(${m.status==='COMPLETED'?'16,185,129':m.status==='READY'?'245,158,11':'59,130,246'},0.2);color:${sc};font-weight:700;">${m.status}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px;">
+                <div style="padding:12px;background:var(--bg-primary);border-radius:8px;text-align:center;">
+                    <div style="font-size:24px;font-weight:700;color:var(--accent-blue);">${m.waypointCount}</div>
+                    <div style="font-size:10px;color:var(--text-secondary);">Waypoints</div>
+                </div>
+                <div style="padding:12px;background:var(--bg-primary);border-radius:8px;text-align:center;">
+                    <div style="font-size:24px;font-weight:700;color:var(--accent-green);">${m.waypointsCompleted}</div>
+                    <div style="font-size:10px;color:var(--text-secondary);">Completed</div>
+                </div>
+                <div style="padding:12px;background:var(--bg-primary);border-radius:8px;text-align:center;">
+                    <div style="font-size:24px;font-weight:700;color:var(--accent-orange);">${(m.missionRiskScore*100).toFixed(0)}%</div>
+                    <div style="font-size:10px;color:var(--text-secondary);">Risk Score</div>
+                </div>
+                <div style="padding:12px;background:var(--bg-primary);border-radius:8px;text-align:center;">
+                    <div style="font-size:24px;font-weight:700;color:var(--accent-red);">${m.anomaliesConfirmed}</div>
+                    <div style="font-size:10px;color:var(--text-secondary);">Anomalies</div>
+                </div>
+                <div style="padding:12px;background:var(--bg-primary);border-radius:8px;text-align:center;">
+                    <div style="font-size:24px;font-weight:700;color:var(--accent-purple);">${m.estimatedDurationMinutes}m</div>
+                    <div style="font-size:10px;color:var(--text-secondary);">Est. Duration</div>
+                </div>
+            </div>
+            ${m.planningReasoning ? `<div style="padding:12px;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);border-radius:8px;margin-bottom:16px;font-size:12px;line-height:1.6;color:var(--text-secondary);"><strong style="color:var(--accent-blue);">AI Planning Reasoning:</strong> ${m.planningReasoning}</div>` : ''}
+            <div style="font-size:14px;font-weight:600;margin-bottom:12px;">Inspection Waypoints (${m.waypointCount})</div>
+            ${waypointHtml}
+            ${m.flotillaRef ? `<div style="margin-top:12px;font-size:11px;color:var(--text-secondary);">Flotilla Ref: ${m.flotillaRef} | ${m.approvedBy ? 'Approved by: ' + m.approvedBy : ''}</div>` : ''}
+        `;
+    } catch(e) { console.error('Mission detail error:', e); }
 }
 </script>
 </body>

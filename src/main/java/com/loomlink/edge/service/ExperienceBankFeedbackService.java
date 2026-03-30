@@ -66,13 +66,26 @@ public class ExperienceBankFeedbackService {
             String originalText = item.getOriginalText();
             String normalizedText = normalizeText(originalText);
 
-            // Check if this text is already cached (might be from a previous correction)
+            // Check if this text is already cached (might be from a previous LLM classification)
             var existing = cacheRepository.findByNormalizedText(normalizedText);
             if (existing.isPresent()) {
-                log.info("Feedback loop: updating existing cache entry for text: '{}'",
-                        truncate(originalText, 80));
-                // In a production system, we'd update the existing entry.
-                // For demo, we log and count it.
+                // OVERWRITE the cached entry with the human-corrected code
+                SemanticCacheEntry cached = existing.get();
+                cached.updateFromHumanCorrection(
+                        correctedCode,
+                        "HUMAN_CORRECTED",
+                        1.0,  // human corrections are 100% confident
+                        "[HUMAN CORRECTION by " + item.getReviewedBy() + "] " +
+                                "Original cached as " + cached.getFailureModeCode() +
+                                ", corrected to " + correctedCode +
+                                ". Reason: " + item.getReviewNotes(),
+                        "human-feedback-v1"
+                );
+                cacheRepository.save(cached);
+                promotionCount.incrementAndGet();
+                log.info("FEEDBACK LOOP: UPDATED existing cache entry. '{}' | Was: {} → Now: {} | By: {}",
+                        truncate(originalText, 60), cached.getFailureModeCode(),
+                        correctedCode, item.getReviewedBy());
                 return true;
             }
 
@@ -168,10 +181,10 @@ public class ExperienceBankFeedbackService {
 
     private String normalizeText(String text) {
         if (text == null) return "";
+        // Must match SemanticCacheService.normalize() — preserve Norwegian chars (å, ø, æ, ö, ä, ü)
         return text.toLowerCase().trim()
-                .replaceAll("[^a-z0-9\\s]", " ")
-                .replaceAll("\\s+", " ")
-                .trim();
+                .replaceAll("[^a-z0-9åøæöäü\\s]", "")
+                .replaceAll("\\s+", " ");
     }
 
     private String truncate(String text, int maxLen) {

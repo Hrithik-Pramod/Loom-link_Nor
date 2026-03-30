@@ -1,8 +1,10 @@
 package com.loomlink.edge.service;
 
 import com.loomlink.edge.domain.enums.FailureModeCode;
+import com.loomlink.edge.domain.enums.EmissionClassification;
 import com.loomlink.edge.domain.model.MaintenanceNotification;
 import com.loomlink.edge.domain.model.SemanticClassification;
+import com.loomlink.edge.domain.model.EmissionEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -233,6 +235,51 @@ public class DemoModeService {
         log.info("Demo mode: no matching scenario for '{}', falling through to LLM",
                 text.substring(0, Math.min(text.length(), 50)));
         return Optional.empty();
+    }
+
+    /**
+     * Attempt to classify an emission event using demo-mode deterministic responses.
+     * Returns empty if no match (falls through to real LLM).
+     */
+    public Optional<EmissionClassification> classifyEmission(EmissionEvent event) {
+        if (!enabled) return Optional.empty();
+
+        String equipmentTag = event.getEquipmentTag().toUpperCase();
+        double reading = event.getRawReading();
+
+        // Demo scenarios based on equipment tag and reading patterns
+        if (equipmentTag.startsWith("VLV") && reading > 200 && reading < 600) {
+            log.info("Demo mode: emission classified as MAINTENANCE_ACTIVITY for {} ({}ppm during valve work)", equipmentTag, reading);
+            simulateLatency();
+            return Optional.of(EmissionClassification.MAINTENANCE_ACTIVITY);
+        }
+        if (equipmentTag.startsWith("PST") || (reading < 200 && reading > 100)) {
+            log.info("Demo mode: emission classified as SENSOR_ARTIFACT for {} ({}ppm, low-range transient)", equipmentTag, reading);
+            simulateLatency();
+            return Optional.of(EmissionClassification.SENSOR_ARTIFACT);
+        }
+        if (equipmentTag.startsWith("PRV") && reading > 1500) {
+            log.info("Demo mode: emission classified as PLANNED_VENTING for {} ({}ppm, PRV high reading)", equipmentTag, reading);
+            simulateLatency();
+            return Optional.of(EmissionClassification.PLANNED_VENTING);
+        }
+        if (equipmentTag.startsWith("FLG") && reading > 500) {
+            log.info("Demo mode: emission classified as FUGITIVE_EMISSION for {} ({}ppm, flange leak signature)", equipmentTag, reading);
+            simulateLatency();
+            return Optional.of(EmissionClassification.FUGITIVE_EMISSION);
+        }
+
+        // No match — fall through to real LLM
+        log.info("Demo mode: no emission scenario matched for {} ({}ppm), falling through to LLM", equipmentTag, reading);
+        return Optional.empty();
+    }
+
+    private void simulateLatency() {
+        try {
+            Thread.sleep(ThreadLocalRandom.current().nextLong(500, 2000));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**

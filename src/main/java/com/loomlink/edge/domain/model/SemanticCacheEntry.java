@@ -191,4 +191,19 @@ public class SemanticCacheEntry {
     public Instant getLastHitAt() { return lastHitAt; }
     public Instant getCreatedAt() { return createdAt; }
     public String getSourceNotificationNumber() { return sourceNotificationNumber; }
+
+    /**
+     * Update this cache entry from a human correction (reclassification).
+     * This is the core of the Experience Bank learning loop — when an engineer
+     * corrects a classification, the cache entry is OVERWRITTEN so that future
+     * lookups return the corrected code, not the original LLM suggestion.
+     */
+    public void updateFromHumanCorrection(FailureModeCode correctedCode, String causeCode,
+                                           double confidence, String reasoning, String modelId) {
+        this.failureModeCode = correctedCode;
+        this.causeCode = causeCode;
+        this.confidence = confidence;
+        this.reasoning = reasoning;
+        this.modelId = modelId;
+    }
 }

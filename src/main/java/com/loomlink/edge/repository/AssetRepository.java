@@ -4,6 +4,7 @@ import com.loomlink.edge.domain.enums.EquipmentClass;
 import com.loomlink.edge.domain.model.Asset;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -19,8 +20,10 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
     @Query("SELECT a FROM Asset a WHERE a.manufacturer = :manufacturer " +
            "AND a.modelNumber = :modelNumber AND a.equipmentClass = :equipmentClass " +
            "AND a.equipmentTag != :excludeTag")
-    List<Asset> findFleetSiblings(String manufacturer, String modelNumber,
-                                   EquipmentClass equipmentClass, String excludeTag);
+    List<Asset> findFleetSiblings(@Param("manufacturer") String manufacturer,
+                                   @Param("modelNumber") String modelNumber,
+                                   @Param("equipmentClass") EquipmentClass equipmentClass,
+                                   @Param("excludeTag") String excludeTag);
 
     List<Asset> findBySapPlant(String sapPlant);
 

@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <version>3.2.5</version>
+        <relativePath/>
+    </parent>
+
+    <groupId>com.loomlink</groupId>
+    <artifactId>loom-link-edge</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <name>Loom Link Edge Logic</name>
+    <description>
+        Sovereign Intelligence Layer for Nordic Energy Matchbox — Challenge 01: Maintenance Optimization.
+        Intercepts free-text SAP notifications, performs local semantic analysis via Mistral 7B on the HM90
+        Sovereign Node, enforces the Reflector Gate, and writes back ISO 14224 codes via SAP BAPI simulation.
+    </description>
+
+    <properties>
+        <java.version>21</java.version>
+        <langchain4j.version>0.35.0</langchain4j.version>
+    </properties>
+
+    <dependencies>
+        <!-- ═══════════════════════════════════════════════════════════════
+             SPRING BOOT CORE
+             ═══════════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             PERSISTENCE — Experience Bank (PostgreSQL)
+             ═══════════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!-- H2 for local dev/demo without requiring PostgreSQL running -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             LOCAL LLM — LangChain4j with Ollama (Llama 3.2 on HM90 Node)
+             Zero cloud dependency. 100% on-premise inference.
+             ═══════════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-ollama</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-spring-boot-starter</artifactId>
+            <version>${langchain4j.version}</version>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             API DOCUMENTATION — Swagger/OpenAPI (springdoc)
+             Interactive API explorer at /swagger-ui.html
+             ═══════════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>2.3.0</version>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             OBSERVABILITY — Prometheus metrics via Micrometer
+             Production-grade monitoring at /actuator/prometheus
+             ═══════════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>io.micrometer</groupId>
+            <artifactId>micrometer-registry-prometheus</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             UTILITIES
+             ═══════════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+        </dependency>
+
+        <!-- ═══════════════════════════════════════════════════════════════
+             TESTING
+             ═══════════════════════════════════════════════════════════════ -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

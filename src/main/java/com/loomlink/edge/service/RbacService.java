@@ -72,13 +72,18 @@ public class RbacService {
     );
 
     /** In-memory user → role map. Pre-seeded with demo users. */
-    private final ConcurrentHashMap<String, Role> userRoles = new ConcurrentHashMap<>(Map.of(
-            "Senior Engineer", Role.SENIOR_ENGINEER,
-            "Lars Hansen", Role.SENIOR_ENGINEER,
-            "Ingrid Johansen", Role.SENIOR_ENGINEER,
-            "Operator Sven", Role.OPERATOR,
-            "Technician Ole", Role.TECHNICIAN,
-            "Admin", Role.ADMIN
+    private final ConcurrentHashMap<String, Role> userRoles = new ConcurrentHashMap<>(Map.ofEntries(
+            Map.entry("Senior Engineer", Role.SENIOR_ENGINEER),
+            Map.entry("Lars Hansen", Role.SENIOR_ENGINEER),
+            Map.entry("lars.henriksen", Role.SENIOR_ENGINEER),
+            Map.entry("lars.hansen", Role.SENIOR_ENGINEER),
+            Map.entry("Ingrid Johansen", Role.SENIOR_ENGINEER),
+            Map.entry("ingrid.johansen", Role.SENIOR_ENGINEER),
+            Map.entry("Operator Sven", Role.OPERATOR),
+            Map.entry("Technician Ole", Role.TECHNICIAN),
+            Map.entry("Admin", Role.ADMIN),
+            Map.entry("admin", Role.ADMIN),
+            Map.entry("operator", Role.SENIOR_ENGINEER)
     ));
 
     /**

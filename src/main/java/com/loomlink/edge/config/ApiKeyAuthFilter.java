@@ -98,8 +98,11 @@ public class ApiKeyAuthFilter implements Filter {
             return;
         }
 
-        // Validate API key
+        // Validate API key — accept from header OR query parameter (for browser downloads)
         String providedKey = httpReq.getHeader(API_KEY_HEADER);
+        if (providedKey == null || providedKey.isBlank()) {
+            providedKey = httpReq.getParameter("apiKey");
+        }
 
         if (apiKey == null || apiKey.isBlank()) {
             sendUnauthorized(httpRes, "API key authentication is enabled but no key is configured on the server.");

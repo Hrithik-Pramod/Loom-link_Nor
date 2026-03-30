@@ -54,6 +54,29 @@ loomlink:
   demo-mode:
     enabled: false
 
+  # Challenge 02: Emission Surveillance Configuration
+  emission:
+    gate-threshold: 0.80
+    seed-demo-data: true
+    experience-bank:
+      similarity-threshold: 0.90
+    compliance:
+      regulation: EU-2024-1787
+      response-deadline-hours: 72
+
+  # Challenge 04: AI-Enhanced Operational Robotics Configuration
+  mission:
+    seed-demo-data: true
+    max-waypoints-default: 15
+    auto-approve-threshold: 0.4
+    risk-scoring:
+      emission-weight: 0.30
+      trend-weight: 0.15
+      rul-weight: 0.20
+      recency-weight: 0.15
+      criticality-weight: 0.15
+      workorder-weight: 0.05
+
   # API Security — Sovereign Node Authentication
   # The API key is shared between SAP OData gateway and Loom Link.
   # On an air-gapped private network, this is sufficient.
@@ -80,7 +103,7 @@ management:
   metrics:
     tags:
       application: loom-link-edge
-      challenge: maintenance-optimization
+      challenge: maintenance-optimization,emission-surveillance,robotics-intelligence
     distribution:
       percentiles-histogram:
         http.server.requests: true
