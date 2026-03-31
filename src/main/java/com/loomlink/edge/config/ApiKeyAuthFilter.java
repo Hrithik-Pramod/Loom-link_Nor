@@ -48,8 +48,13 @@ public class ApiKeyAuthFilter implements Filter {
             "/api-docs",       // OpenAPI spec
             "/v3/api-docs",    // SpringDoc default path
             "/index.html",     // Dashboard (served separately, uses API key from JS)
+            "/login.html",     // Login page
             "/favicon.ico",
-            "/error"
+            "/error",
+            "/api/v1/live-feed",         // SSE stream, scheduler controls, Ch1/Ch2 pause/resume
+            "/api/v1/analytics",         // Analytics KPIs + Facility Risk (dashboard use)
+            "/api/v1/emissions",         // Emission events query + stats (dashboard use)
+            "/api/v1/demo"               // Demo reset + status (dashboard use)
     );
 
     /** Static asset extensions that bypass auth. */

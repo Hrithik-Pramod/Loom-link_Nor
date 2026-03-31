@@ -84,6 +84,29 @@ public class NotificationController {
         response.put("cacheMatchType", result.cacheMatchType());
         response.put("queuedForRetry", result.queuedForRetry());
 
+        // ── RUL Forecast (72-hour Remaining Useful Life) ────────────────
+        // Only populated for rotating equipment with vibration data.
+        if (result.hasRulForecast()) {
+            var rul = result.rulForecast();
+            Map<String, Object> rulData = new java.util.LinkedHashMap<>();
+            rulData.put("remainingUsefulLifeHours", Math.round(rul.rulHours() * 10.0) / 10.0);
+            rulData.put("riskLevel", rul.riskLevel());
+            rulData.put("actionWindow", rul.actionWindow());
+            rulData.put("confidence", Math.round(rul.confidence() * 100.0) / 100.0);
+            rulData.put("likelyFailureMode", rul.likelyFailureMode() != null
+                    ? rul.likelyFailureMode().name() : null);
+            rulData.put("currentVelocityMmS", rul.currentVelocityMmS());
+            rulData.put("currentSeverityZone", rul.currentSeverityZone());
+            rulData.put("currentBearingTempC", rul.currentBearingTempC());
+            rulData.put("trendRateMmSPerHour", Math.round(rul.trendRateMmSPerHour() * 10000.0) / 10000.0);
+            rulData.put("fleetSiblingCount", rul.fleetSiblingCount());
+            rulData.put("siblingFailureRecords", rul.siblingFailureRecords());
+            rulData.put("forecastTimestamp", rul.forecastTimestamp());
+            response.put("rulForecast", rulData);
+        } else {
+            response.put("rulForecast", null);
+        }
+
         return ResponseEntity.ok(response);
     }
 

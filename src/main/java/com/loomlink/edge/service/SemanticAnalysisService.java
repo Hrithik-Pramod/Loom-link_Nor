@@ -78,7 +78,7 @@ public class SemanticAnalysisService {
             Output: {"failureModeCode":"VIB","causeCode":"B01","confidence":0.94,"reasoning":"Grinding noise + rising vibration + elevated bearing temperature = three convergent bearing wear indicators"}
 
             Input: "Something wrong with pump, checked twice, not sure"
-            Output: {"failureModeCode":"VIB","causeCode":"U01","confidence":0.35,"reasoning":"Vague description with no specific symptoms or measurements. Cannot confidently classify."}
+            Output: {"failureModeCode":"UNK","causeCode":"U01","confidence":0.25,"reasoning":"Vague description with no specific symptoms, measurements, or failure indicators. 'Something wrong' is not classifiable — route to human review."}
 
             Input: "Oil temp alarm on compressor, reading 92C, normally 65C, rising for 6 hours"
             Output: {"failureModeCode":"OHE","causeCode":"L01","confidence":0.92,"reasoning":"Objective temperature measurement 27C above baseline with progressive trend confirms overheating"}

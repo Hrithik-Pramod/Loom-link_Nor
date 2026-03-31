@@ -214,11 +214,29 @@ public class EmissionEvent {
     @Column(name = "trend_direction")
     private String trendDirection;
 
-    // ── Review / Experience Bank ────────────────────────────────────
+    // ── Remediation Recommendation ────────────────────────────────
 
-    /** Review status: PENDING, CONFIRMED, RECLASSIFIED, DISMISSED. */
+    /** AI-generated prescriptive remediation action for this emission event. */
+    @Column(name = "remediation_action", length = 2000)
+    private String remediationAction;
+
+    /** Urgency level of the recommended action: IMMEDIATE, WITHIN_24H, WITHIN_72H, ROUTINE, MONITOR_ONLY. */
+    @Column(name = "remediation_urgency")
+    private String remediationUrgency;
+
+    /** Estimated time to complete remediation in hours. */
+    @Column(name = "remediation_estimated_hours")
+    private Double remediationEstimatedHours;
+
+    // ── Review / Exception Inbox ──────────────────────────────────────
+
+    /** Review status: PENDING, GATE_REJECTED, CONFIRMED, RECLASSIFIED, DISMISSED. */
     @Column(name = "review_status")
     private String reviewStatus;
+
+    /** Priority for gate-rejected events: CRITICAL, HIGH, MEDIUM, LOW. */
+    @Column(name = "review_priority")
+    private String reviewPriority;
 
     /** Engineer who reviewed (if applicable). */
     @Column(name = "reviewed_by")
@@ -355,6 +373,40 @@ public class EmissionEvent {
         this.complianceStatus = ComplianceStatus.WORK_ORDER_CREATED;
     }
 
+    /**
+     * Route this event to the Emission Exception Inbox for human review.
+     * Called when the Emission Reflector Gate rejects the classification.
+     *
+     * Priority logic (mirrors Challenge 01 ExceptionInboxItem):
+     * - CRITICAL: safety-critical equipment (PRV, PSV, BDV) OR high reading (>2x baseline)
+     * - HIGH: UNKNOWN classification OR confidence very close to threshold (gap <0.05)
+     * - MEDIUM: moderate confidence gap (<0.15)
+     * - LOW: everything else
+     */
+    public void routeToExceptionInbox(double gateThreshold) {
+        this.reviewStatus = "GATE_REJECTED";
+        double gap = gateThreshold - this.confidence;
+
+        // Safety-critical equipment always gets CRITICAL priority
+        String tag = this.equipmentTag != null ? this.equipmentTag.toUpperCase() : "";
+        boolean isSafetyCritical = tag.startsWith("PRV") || tag.startsWith("PSV") || tag.startsWith("BDV");
+
+        // High reading relative to baseline suggests real emission
+        boolean highRelativeToBaseline = this.historicalBaselinePpm != null
+                && this.historicalBaselinePpm > 0
+                && this.rawReading > this.historicalBaselinePpm * 2.0;
+
+        if (isSafetyCritical || highRelativeToBaseline) {
+            this.reviewPriority = "CRITICAL";
+        } else if (this.classification == EmissionClassification.UNKNOWN || gap < 0.05) {
+            this.reviewPriority = "HIGH";
+        } else if (gap < 0.15) {
+            this.reviewPriority = "MEDIUM";
+        } else {
+            this.reviewPriority = "LOW";
+        }
+    }
+
     public void reclassify(String reviewedBy, EmissionClassification corrected, String notes) {
         this.reviewStatus = "RECLASSIFIED";
         this.reviewedBy = reviewedBy;
@@ -429,5 +481,16 @@ public class EmissionEvent {
     public Instant getComplianceDocumentedAt() { return complianceDocumentedAt; }
     public Instant getCreatedAt() { return createdAt; }
 
+    public String getReviewPriority() { return reviewPriority; }
+    public String getRemediationAction() { return remediationAction; }
+    public String getRemediationUrgency() { return remediationUrgency; }
+    public Double getRemediationEstimatedHours() { return remediationEstimatedHours; }
+
     public void setCoordinates(String coordinates) { this.coordinates = coordinates; }
+
+    public void applyRemediation(String action, String urgency, Double estimatedHours) {
+        this.remediationAction = action;
+        this.remediationUrgency = urgency;
+        this.remediationEstimatedHours = estimatedHours;
+    }
 }

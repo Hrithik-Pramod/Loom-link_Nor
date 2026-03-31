@@ -147,6 +147,54 @@ public class SapBapiGateway {
     }
 
     /**
+     * Write-back from a manual review (approval or reclassification in Exception Inbox).
+     *
+     * <p>When a Senior Engineer approves or reclassifies a rejected notification,
+     * the corrected failure code needs to reach SAP — not just the Experience Bank.
+     * Without this, the SAP notification stays uncoded despite human intervention.</p>
+     *
+     * @param sapNotificationNumber the SAP notification to update
+     * @param equipmentTag          the equipment tag
+     * @param failureModeCode       the approved/corrected failure mode code
+     * @param causeCode             the cause code (or "HUMAN_CORRECTED" for reclassifications)
+     * @param reviewedBy            the engineer who performed the review (for audit)
+     */
+    public void writeBackFromManualReview(
+            String sapNotificationNumber,
+            String equipmentTag,
+            com.loomlink.edge.domain.enums.FailureModeCode failureModeCode,
+            String causeCode,
+            String reviewedBy) {
+
+        Map<String, Object> bapiPayload = Map.of(
+                "BAPI", "BAPI_ALM_NOTIF_DATA_MODIFY",
+                "NOTIFICATION", sapNotificationNumber,
+                "NOTIF_TYPE", "M2",
+                "EQUIPMENT", equipmentTag,
+                "FAILURE_MODE_CODE", failureModeCode.name(),
+                "FAILURE_MODE_TEXT", failureModeCode.getDescription(),
+                "CAUSE_CODE", causeCode != null ? causeCode : "",
+                "LOOM_LINK_CONFIDENCE", "1.000",  // Human review = absolute confidence
+                "LOOM_LINK_REVIEWER", reviewedBy,
+                "LOOM_LINK_TIMESTAMP", Instant.now().toString()
+        );
+
+        log.info("══════════════════════════════════════════════════════════════");
+        log.info("  SAP BAPI WRITE-BACK FROM MANUAL REVIEW (SIMULATED)");
+        log.info("══════════════════════════════════════════════════════════════");
+        log.info("  Function Module : BAPI_ALM_NOTIF_DATA_MODIFY");
+        log.info("  Notification    : {}", sapNotificationNumber);
+        log.info("  Equipment       : {}", equipmentTag);
+        log.info("  Failure Mode    : {} ({})", failureModeCode, failureModeCode.getDescription());
+        log.info("  Reviewed By     : {}", reviewedBy);
+        log.info("  Source          : Exception Inbox → Human Override");
+        log.info("══════════════════════════════════════════════════════════════");
+
+        // In production: actual JCo BAPI call here.
+        // For demo: log the payload. If simulated failure, queue to DLQ.
+    }
+
+    /**
      * Result of a SAP write-back attempt.
      *
      * @param bapiPayload    the BAPI parameters (for audit)

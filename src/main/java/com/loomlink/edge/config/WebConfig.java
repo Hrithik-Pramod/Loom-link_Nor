@@ -2,6 +2,7 @@ package com.loomlink.edge.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -17,5 +18,11 @@ public class WebConfig implements WebMvcConfigurer {
                 .allowedOrigins("*")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*");
+    }
+
+    @Override
+    public void addViewControllers(ViewControllerRegistry registry) {
+        // Root path redirects to login page
+        registry.addRedirectViewController("/", "/login.html");
     }
 }

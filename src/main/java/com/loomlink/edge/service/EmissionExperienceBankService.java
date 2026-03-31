@@ -171,16 +171,21 @@ public class EmissionExperienceBankService {
         String normalizedText = normalize(emissionText);
 
         try {
+            // (Scenario 6 fix) Store classification in sourceNotificationNumber using a
+            // parseable format: "EMCLS:{CLASSIFICATION}:{eventId}"
+            // This replaces the broken "EMISSION_" prefix convention where split("_")[0]
+            // would truncate multi-word enum names like FUGITIVE_EMISSION → FUGITIVE.
+            String sourceRef = "EMCLS:" + classification.name() + ":" + emissionEvent.getId();
             SemanticCacheEntry cacheEntry = SemanticCacheEntry.fromVerifiedClassification(
                     emissionText,
                     emissionEvent.getEquipmentTag(),
                     null, // emission events don't have SAP plant
                     null, // emission events don't use FailureModeCode
-                    "EMISSION_" + classification.name(), // use classification as source code
+                    "EMISSION_" + classification.name(), // causeCode field
                     confidence,
                     reasoning,
                     modelId,
-                    "EMISSION_" + emissionEvent.getId() // mark source as emission-origin
+                    sourceRef // parseable source reference
             );
             semanticCacheRepository.save(cacheEntry);
 
@@ -236,6 +241,10 @@ public class EmissionExperienceBankService {
         );
 
         try {
+            // (Scenario 6 fix) Use the same parseable format for human corrections:
+            // "EMCLS:{CORRECTED_CLASSIFICATION}:{eventId}" — so parseEmissionClassification()
+            // can extract the correct enum name regardless of underscores in the enum value.
+            String sourceRef = "EMCLS:" + correctedClassification.name() + ":" + emissionEvent.getId();
             SemanticCacheEntry cacheEntry = SemanticCacheEntry.fromVerifiedClassification(
                     emissionText,
                     emissionEvent.getEquipmentTag(),
@@ -245,7 +254,7 @@ public class EmissionExperienceBankService {
                     confidence,
                     correctionReasoning,
                     "HUMAN_CORRECTION",
-                    "EMISSION_CORRECTION_" + emissionEvent.getId()
+                    sourceRef
             );
             semanticCacheRepository.save(cacheEntry);
 
@@ -385,20 +394,49 @@ public class EmissionExperienceBankService {
      * @param entry cache entry
      * @return parsed emission classification
      */
+    /**
+     * Parse emission classification from cache entry.
+     *
+     * (Scenario 6 fix) Supports two formats:
+     * - New format: "EMCLS:{CLASSIFICATION_NAME}:{eventId}" — colon-delimited, safe for
+     *   multi-word enum names like FUGITIVE_EMISSION
+     * - Legacy format: "EMISSION_{CLASSIFICATION}" — broken for multi-word enums,
+     *   kept for backward compatibility with existing cache entries
+     *
+     * @param entry cache entry
+     * @return parsed emission classification
+     */
     private EmissionClassification parseEmissionClassification(SemanticCacheEntry entry) {
         String sourceNotification = entry.getSourceNotificationNumber();
+        if (sourceNotification == null) {
+            return EmissionClassification.UNKNOWN;
+        }
 
-        if (sourceNotification != null && sourceNotification.startsWith("EMISSION_")) {
-            String classificationStr = sourceNotification
-                    .replace("EMISSION_", "")
-                    .split("_")[0];
-
-            try {
-                return EmissionClassification.valueOf(classificationStr);
-            } catch (IllegalArgumentException e) {
-                logger.warn("Failed to parse classification from: {}, defaulting to UNKNOWN", sourceNotification);
-                return EmissionClassification.UNKNOWN;
+        // New format: "EMCLS:FUGITIVE_EMISSION:uuid-here"
+        if (sourceNotification.startsWith("EMCLS:")) {
+            String[] parts = sourceNotification.split(":", 3); // limit=3 to not split UUID colons
+            if (parts.length >= 2) {
+                try {
+                    return EmissionClassification.valueOf(parts[1]);
+                } catch (IllegalArgumentException e) {
+                    logger.warn("Failed to parse classification from EMCLS format: {}, defaulting to UNKNOWN",
+                            sourceNotification);
+                    return EmissionClassification.UNKNOWN;
+                }
             }
+        }
+
+        // Legacy format: "EMISSION_FUGITIVE_EMISSION" or "EMISSION_CORRECTION_uuid"
+        // Try all enum values to find a match (handles multi-word names correctly)
+        if (sourceNotification.startsWith("EMISSION_")) {
+            String remainder = sourceNotification.substring("EMISSION_".length());
+            for (EmissionClassification ec : EmissionClassification.values()) {
+                if (remainder.startsWith(ec.name())) {
+                    return ec;
+                }
+            }
+            logger.warn("Failed to parse classification from legacy format: {}, defaulting to UNKNOWN",
+                    sourceNotification);
         }
 
         return EmissionClassification.UNKNOWN;

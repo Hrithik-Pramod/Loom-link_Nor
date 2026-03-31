@@ -167,6 +167,9 @@ public class EmissionController {
         response.put("totalPipelineLatencyMs", result.totalLatencyMs());
         response.put("modelId", event.getModelId());
         response.put("complianceStatus", event.getComplianceStatus().name());
+        response.put("remediationAction", result.remediationAction());
+        response.put("remediationUrgency", result.remediationUrgency());
+        response.put("remediationEstimatedHours", result.remediationEstimatedHours());
 
         return ResponseEntity.ok(response);
     }
@@ -272,6 +275,38 @@ public class EmissionController {
         return ResponseEntity.ok(events.stream().map(this::toMap).toList());
     }
 
+    /**
+     * Get emission event timeline data for trend chart visualization.
+     *
+     * <p>Returns aggregated daily counts by classification over the last 7 days,
+     * designed for a stacked bar/line chart on the dashboard.</p>
+     */
+    @GetMapping("/timeline")
+    public ResponseEntity<Map<String, Object>> getEmissionTimeline() {
+        Instant sevenDaysAgo = Instant.now().minus(java.time.Duration.ofDays(7));
+        List<EmissionEvent> events = repository.findAllByDetectedAtAfterOrderByDetectedAtAsc(sevenDaysAgo);
+
+        // Aggregate by day and classification
+        Map<String, Map<String, Integer>> dailyCounts = new LinkedHashMap<>();
+        Map<String, Integer> dailyTotals = new LinkedHashMap<>();
+
+        for (EmissionEvent ev : events) {
+            String day = ev.getDetectedAt().toString().substring(0, 10); // YYYY-MM-DD
+            dailyCounts.computeIfAbsent(day, k -> new LinkedHashMap<>());
+            String cls = ev.getClassification() != null ? ev.getClassification().name() : "UNKNOWN";
+            dailyCounts.get(day).merge(cls, 1, Integer::sum);
+            dailyTotals.merge(day, 1, Integer::sum);
+        }
+
+        // Build response
+        Map<String, Object> timeline = new LinkedHashMap<>();
+        timeline.put("days", dailyCounts);
+        timeline.put("totals", dailyTotals);
+        timeline.put("totalEvents", events.size());
+
+        return ResponseEntity.ok(timeline);
+    }
+
     // ── Review / Reclassification Endpoints ─────────────────────────────────
 
     /**
@@ -370,6 +405,37 @@ public class EmissionController {
 
             return ResponseEntity.ok(toMap(event));
         }).orElse(ResponseEntity.notFound().build());
+    }
+
+    // ── Exception Inbox Endpoints ─────────────────────────────────────────────
+
+    /**
+     * Get emission events that were gate-rejected and need human review.
+     *
+     * <p>This is the Ch2 equivalent of the Challenge 01 Exception Inbox.
+     * Returns events with reviewStatus = "GATE_REJECTED", ordered by priority
+     * (CRITICAL first, then HIGH, MEDIUM, LOW).</p>
+     *
+     * <p>EU 2024/1787 requires that ALL detected potential leaks receive documented
+     * response within 72 hours — even if the AI gate rejected them.</p>
+     */
+    @GetMapping("/exception-inbox")
+    public ResponseEntity<List<Map<String, Object>>> getEmissionExceptionInbox() {
+        List<EmissionEvent> rejected = repository.findByReviewStatus("GATE_REJECTED");
+
+        // Sort by priority: CRITICAL > HIGH > MEDIUM > LOW
+        List<String> priorityOrder = List.of("CRITICAL", "HIGH", "MEDIUM", "LOW");
+        List<EmissionEvent> sorted = rejected.stream()
+                .sorted((a, b) -> {
+                    int pa = priorityOrder.indexOf(a.getReviewPriority());
+                    int pb = priorityOrder.indexOf(b.getReviewPriority());
+                    if (pa == -1) pa = 99;
+                    if (pb == -1) pb = 99;
+                    return Integer.compare(pa, pb);
+                })
+                .toList();
+
+        return ResponseEntity.ok(sorted.stream().map(this::toMap).toList());
     }
 
     // ── Compliance Endpoints ────────────────────────────────────────────────
@@ -507,6 +573,7 @@ public class EmissionController {
         map.put("previousDetections7d", event.getPreviousDetections7d());
         map.put("trendDirection", event.getTrendDirection());
         map.put("reviewStatus", event.getReviewStatus());
+        map.put("reviewPriority", event.getReviewPriority());
         map.put("reviewedBy", event.getReviewedBy());
         map.put("correctedClassification", event.getCorrectedClassification() != null
                 ? event.getCorrectedClassification().name() : null);
@@ -516,6 +583,9 @@ public class EmissionController {
         map.put("classifiedAt", event.getClassifiedAt());
         map.put("complianceDocumentedAt", event.getComplianceDocumentedAt());
         map.put("createdAt", event.getCreatedAt());
+        map.put("remediationAction", event.getRemediationAction());
+        map.put("remediationUrgency", event.getRemediationUrgency());
+        map.put("remediationEstimatedHours", event.getRemediationEstimatedHours());
         return map;
     }
 }

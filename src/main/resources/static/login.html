@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loom Link — Login</title>
+    <style>
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-card: #1a2332;
+            --border: #2d3748;
+            --text-primary: #f0f4f8;
+            --text-secondary: #94a3b8;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f59e0b;
+            --accent-red: #ef4444;
+            --accent-purple: #8b5cf6;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        /* ── Animated background ─────────────────────────── */
+        .bg-grid {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+            z-index: 0;
+        }
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .bg-glow {
+            position: fixed; width: 600px; height: 600px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 70%);
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            animation: pulse 4s ease-in-out infinite;
+            z-index: 0;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 0.5; transform: translate(-50%, -50%) scale(1); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* ── Login Container ─────────────────────────────── */
+        .login-container {
+            position: relative; z-index: 1;
+            width: 520px; max-width: 95vw;
+            text-align: center;
+        }
+
+        /* ── Logo Area ───────────────────────────────────── */
+        .logo-area {
+            margin-bottom: 40px;
+        }
+        .logo-text {
+            font-size: 48px; font-weight: 800; letter-spacing: 3px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+        .logo-subtitle {
+            font-size: 14px; color: var(--text-secondary); letter-spacing: 4px;
+            text-transform: uppercase; font-weight: 500;
+        }
+        .logo-event {
+            margin-top: 16px; font-size: 11px; color: var(--accent-orange);
+            letter-spacing: 2px; text-transform: uppercase; font-weight: 600;
+        }
+        .badge-row {
+            display: flex; gap: 8px; justify-content: center; margin-top: 16px; flex-wrap: wrap;
+        }
+        .badge {
+            padding: 4px 14px; border-radius: 20px; font-size: 10px;
+            font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .badge-green { background: rgba(16,185,129,0.15); color: var(--accent-green); border: 1px solid rgba(16,185,129,0.3); }
+        .badge-blue { background: rgba(59,130,246,0.15); color: var(--accent-blue); border: 1px solid rgba(59,130,246,0.3); }
+        .badge-purple { background: rgba(139,92,246,0.15); color: var(--accent-purple); border: 1px solid rgba(139,92,246,0.3); }
+
+        /* ── Role Cards ──────────────────────────────────── */
+        .role-cards {
+            display: flex; gap: 16px; margin-top: 32px;
+        }
+        .role-card {
+            flex: 1; background: var(--bg-card); border: 1px solid var(--border);
+            border-radius: 16px; padding: 28px 20px; cursor: pointer;
+            transition: all 0.3s ease; position: relative; overflow: hidden;
+        }
+        .role-card:hover {
+            border-color: var(--accent-blue);
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(59,130,246,0.15);
+        }
+        .role-card:active {
+            transform: translateY(-2px);
+        }
+        .role-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+        }
+        .role-card.engineer::before {
+            background: linear-gradient(90deg, var(--accent-blue), var(--accent-green));
+        }
+        .role-card.admin::before {
+            background: linear-gradient(90deg, var(--accent-purple), var(--accent-orange));
+        }
+
+        .role-icon {
+            font-size: 36px; margin-bottom: 12px;
+        }
+        .role-name {
+            font-size: 16px; font-weight: 700; margin-bottom: 4px;
+        }
+        .role-user {
+            font-size: 13px; color: var(--accent-blue); font-weight: 600; margin-bottom: 12px;
+        }
+        .role-desc {
+            font-size: 12px; color: var(--text-secondary); line-height: 1.6;
+        }
+        .role-permissions {
+            margin-top: 14px; text-align: left;
+        }
+        .role-perm {
+            font-size: 11px; color: var(--text-secondary); padding: 3px 0;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .role-perm .dot {
+            width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0;
+        }
+        .dot-green { background: var(--accent-green); }
+        .dot-blue { background: var(--accent-blue); }
+        .dot-orange { background: var(--accent-orange); }
+
+        /* ── System Status ───────────────────────────────── */
+        .system-status {
+            margin-top: 40px; display: flex; justify-content: center; gap: 24px;
+            font-size: 11px; color: var(--text-secondary);
+        }
+        .status-item {
+            display: flex; align-items: center; gap: 6px;
+        }
+        .status-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            animation: statusPulse 2s infinite;
+        }
+        .status-dot.live { background: var(--accent-green); }
+        .status-dot.active { background: var(--accent-blue); }
+        @keyframes statusPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* ── Footer ──────────────────────────────────────── */
+        .footer {
+            margin-top: 48px; font-size: 10px; color: var(--text-secondary);
+            letter-spacing: 1px; opacity: 0.6;
+        }
+
+        /* ── Loading transition ───────────────────────────── */
+        .login-container.loading {
+            animation: fadeOut 0.5s ease-out forwards;
+        }
+        @keyframes fadeOut {
+            to { opacity: 0; transform: scale(0.95); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow"></div>
+
+    <div class="login-container" id="login-container">
+        <!-- Logo -->
+        <div class="logo-area">
+            <div class="logo-text">LOOM LINK</div>
+            <div class="logo-subtitle">Sovereign Intelligence Layer</div>
+            <div class="logo-event">Nordic Energy Matchbox 2026 — Stavanger</div>
+            <div class="badge-row">
+                <span class="badge badge-green">100% Local Execution</span>
+                <span class="badge badge-blue">Challenge 01</span>
+                <span class="badge badge-purple">SAP Clean Core</span>
+            </div>
+        </div>
+
+        <!-- Role Selection -->
+        <div class="role-cards">
+            <!-- Senior Engineer -->
+            <div class="role-card engineer" onclick="login('lars.henriksen', 'SENIOR_ENGINEER')">
+                <div class="role-icon">&#128736;</div>
+                <div class="role-name">Senior Engineer</div>
+                <div class="role-user">Lars Henriksen</div>
+                <div class="role-desc">Operations dashboard with full pipeline visibility, exception review, and Experience Bank oversight.</div>
+                <div class="role-permissions">
+                    <div class="role-perm"><span class="dot dot-green"></span> Classify &amp; approve maintenance notes</div>
+                    <div class="role-perm"><span class="dot dot-green"></span> Review &amp; reclassify exceptions</div>
+                    <div class="role-perm"><span class="dot dot-blue"></span> Experience Bank &amp; semantic cache</div>
+                    <div class="role-perm"><span class="dot dot-blue"></span> Fleet intelligence &amp; RUL forecasting</div>
+                    <div class="role-perm"><span class="dot dot-orange"></span> Audit trail &amp; compliance export</div>
+                </div>
+            </div>
+
+            <!-- Admin -->
+            <div class="role-card admin" onclick="login('admin', 'ADMIN')">
+                <div class="role-icon">&#9881;</div>
+                <div class="role-name">System Admin</div>
+                <div class="role-user">Admin</div>
+                <div class="role-desc">Full system access including sovereign health monitoring, RBAC management, and configuration.</div>
+                <div class="role-permissions">
+                    <div class="role-perm"><span class="dot dot-green"></span> All Senior Engineer permissions</div>
+                    <div class="role-perm"><span class="dot dot-orange"></span> Sovereign node health monitoring</div>
+                    <div class="role-perm"><span class="dot dot-orange"></span> RBAC role management</div>
+                    <div class="role-perm"><span class="dot dot-blue"></span> Pipeline configuration</div>
+                    <div class="role-perm"><span class="dot dot-blue"></span> Experience Bank administration</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="system-status">
+            <div class="status-item">
+                <span class="status-dot live"></span>
+                HM90 Sovereign Node
+            </div>
+            <div class="status-item">
+                <span class="status-dot active"></span>
+                Mistral 7B Ready
+            </div>
+            <div class="status-item">
+                <span class="status-dot live"></span>
+                SAP OData Listener
+            </div>
+            <div class="status-item">
+                <span class="status-dot active"></span>
+                Reflector Gate Active
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            Equinor &amp; Aker BP — Sovereign AI for Offshore Maintenance
+        </div>
+    </div>
+
+    <script>
+        function login(userId, role) {
+            // Store session info
+            sessionStorage.setItem('loomlink-user', userId);
+            sessionStorage.setItem('loomlink-role', role);
+
+            // Animate out
+            document.getElementById('login-container').classList.add('loading');
+
+            // Redirect to dashboard
+            setTimeout(() => {
+                window.location.href = '/index.html?user=' + encodeURIComponent(userId) + '&role=' + encodeURIComponent(role);
+            }, 400);
+        }
+    </script>
+</body>
+</html>

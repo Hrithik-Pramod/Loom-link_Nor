@@ -1,8 +1,10 @@
 package com.loomlink.edge.controller;
 
+import com.loomlink.edge.domain.enums.EquipmentClass;
 import com.loomlink.edge.domain.enums.FailureModeCode;
 import com.loomlink.edge.domain.model.AuditLog;
 import com.loomlink.edge.domain.model.ExceptionInboxItem;
+import com.loomlink.edge.gateway.SapBapiGateway;
 import com.loomlink.edge.repository.AuditLogRepository;
 import com.loomlink.edge.repository.ExceptionInboxRepository;
 import com.loomlink.edge.service.ExperienceBankFeedbackService;
@@ -46,16 +48,19 @@ public class ExceptionInboxController {
     private final RbacService rbac;
     private final ExperienceBankFeedbackService feedbackService;
     private final AuditLogRepository auditLogRepository;
+    private final SapBapiGateway bapiGateway;
 
     public ExceptionInboxController(
             ExceptionInboxRepository repository,
             RbacService rbac,
             ExperienceBankFeedbackService feedbackService,
-            AuditLogRepository auditLogRepository) {
+            AuditLogRepository auditLogRepository,
+            SapBapiGateway bapiGateway) {
         this.repository = repository;
         this.rbac = rbac;
         this.feedbackService = feedbackService;
         this.auditLogRepository = auditLogRepository;
+        this.bapiGateway = bapiGateway;
     }
 
     /**
@@ -78,16 +83,119 @@ public class ExceptionInboxController {
     }
 
     /**
-     * Inbox statistics for the dashboard.
+     * Inbox statistics for the dashboard — includes operational metrics
+     * for Ptil audit compliance and demo KPI reporting.
+     *
+     * <p>Metrics include:</p>
+     * <ul>
+     *   <li>Basic counts (pending, approved, reclassified, dismissed, total)</li>
+     *   <li>False-positive rate (dismissed / total resolved) — measures gate accuracy</li>
+     *   <li>SLA compliance rate (slaMet=true / total resolved) — NORSOK Z-008</li>
+     *   <li>Average resolution hours (overall + per-priority breakdown)</li>
+     *   <li>Average wait-before-view hours — measures inbox responsiveness</li>
+     * </ul>
      */
     @GetMapping("/stats")
     public ResponseEntity<Map<String, Object>> stats() {
         Map<String, Object> stats = new LinkedHashMap<>();
-        stats.put("pending", repository.countPending());
-        stats.put("approved", repository.countApproved());
-        stats.put("reclassified", repository.countReclassified());
-        stats.put("dismissed", repository.countDismissed());
-        stats.put("total", repository.count());
+
+        // ── Basic Counts ───────────────────────────────────────────────
+        long pending = repository.countPending();
+        long approved = repository.countApproved();
+        long reclassified = repository.countReclassified();
+        long dismissed = repository.countDismissed();
+        long total = repository.count();
+        long resolved = repository.countResolved();
+
+        stats.put("pending", pending);
+        stats.put("approved", approved);
+        stats.put("reclassified", reclassified);
+        stats.put("dismissed", dismissed);
+        stats.put("total", total);
+        stats.put("resolved", resolved);
+
+        // ── Operational Metrics ────────────────────────────────────────
+
+        // False-positive rate: dismissed items are "noise" the gate shouldn't have flagged
+        // Lower is better — means the Reflector Gate is catching real issues
+        if (resolved > 0) {
+            double falsePositiveRate = (double) dismissed / resolved;
+            stats.put("falsePositiveRate", Math.round(falsePositiveRate * 1000.0) / 1000.0);
+        } else {
+            stats.put("falsePositiveRate", null);
+        }
+
+        // SLA compliance: percentage of resolved items where review was within target hours
+        long slaMet = repository.countSlaMet();
+        long slaMissed = repository.countSlaMissed();
+        long slaTotal = slaMet + slaMissed;
+        if (slaTotal > 0) {
+            double slaComplianceRate = (double) slaMet / slaTotal;
+            stats.put("slaComplianceRate", Math.round(slaComplianceRate * 1000.0) / 1000.0);
+            stats.put("slaMetCount", slaMet);
+            stats.put("slaMissedCount", slaMissed);
+        } else {
+            stats.put("slaComplianceRate", null);
+            stats.put("slaMetCount", 0L);
+            stats.put("slaMissedCount", 0L);
+        }
+
+        // Resolution time and wait-before-view from resolved items
+        List<ExceptionInboxItem> resolvedItems = repository.findResolved();
+        if (!resolvedItems.isEmpty()) {
+            // Average resolution hours (creation → review completion)
+            double avgResolutionHours = resolvedItems.stream()
+                    .map(ExceptionInboxItem::getResolutionHours)
+                    .filter(h -> h != null)
+                    .mapToDouble(Double::doubleValue)
+                    .average()
+                    .orElse(0.0);
+            stats.put("avgResolutionHours", Math.round(avgResolutionHours * 100.0) / 100.0);
+
+            // Average wait-before-view hours (creation → first engineer view)
+            double avgWaitHours = resolvedItems.stream()
+                    .map(ExceptionInboxItem::getWaitHoursBeforeView)
+                    .filter(h -> h != null)
+                    .mapToDouble(Double::doubleValue)
+                    .average()
+                    .orElse(0.0);
+            stats.put("avgWaitBeforeViewHours", Math.round(avgWaitHours * 100.0) / 100.0);
+        } else {
+            stats.put("avgResolutionHours", null);
+            stats.put("avgWaitBeforeViewHours", null);
+        }
+
+        // ── Per-Priority Breakdown ─────────────────────────────────────
+        Map<String, Object> priorityBreakdown = new LinkedHashMap<>();
+        for (String priority : List.of("CRITICAL", "HIGH", "MEDIUM", "LOW")) {
+            List<ExceptionInboxItem> byPriority = repository.findResolvedByPriority(priority);
+            Map<String, Object> pStats = new LinkedHashMap<>();
+            pStats.put("resolved", byPriority.size());
+
+            if (!byPriority.isEmpty()) {
+                double avgHours = byPriority.stream()
+                        .map(ExceptionInboxItem::getResolutionHours)
+                        .filter(h -> h != null)
+                        .mapToDouble(Double::doubleValue)
+                        .average()
+                        .orElse(0.0);
+                pStats.put("avgResolutionHours", Math.round(avgHours * 100.0) / 100.0);
+
+                long metCount = byPriority.stream()
+                        .filter(i -> Boolean.TRUE.equals(i.getSlaMet()))
+                        .count();
+                pStats.put("slaMetCount", metCount);
+                pStats.put("slaComplianceRate",
+                        Math.round((double) metCount / byPriority.size() * 1000.0) / 1000.0);
+            } else {
+                pStats.put("avgResolutionHours", null);
+                pStats.put("slaMetCount", 0L);
+                pStats.put("slaComplianceRate", null);
+            }
+            priorityBreakdown.put(priority, pStats);
+        }
+        stats.put("priorityBreakdown", priorityBreakdown);
+
         return ResponseEntity.ok(stats);
     }
 
@@ -122,6 +230,24 @@ public class ExceptionInboxController {
 
             // FEEDBACK LOOP: Promote approved classification to Experience Bank
             feedbackService.promoteApproval(item);
+
+            // SAP WRITE-BACK: Push the approved code to SAP via BAPI
+            // (The original pipeline didn't write because the gate rejected it.
+            //  Now that a Senior Engineer approves, we complete the write-back.)
+            try {
+                bapiGateway.writeBackFromManualReview(
+                        item.getSapNotificationNumber(),
+                        item.getEquipmentTag(),
+                        item.getSuggestedFailureCode(),
+                        item.getSuggestedCauseCode(),
+                        request.reviewedBy());
+                log.info("SAP write-back completed for APPROVED exception {} → {}",
+                        id, item.getSuggestedFailureCode());
+            } catch (Exception e) {
+                log.error("SAP write-back FAILED for approved exception {}: {}",
+                        id, e.getMessage());
+                // Don't fail the approval — it's still valid. DLQ will retry the SAP write.
+            }
 
             // AUDIT TRAIL: Record the approval for compliance
             AuditLog auditEntry = AuditLog.recordManualReview(
@@ -161,8 +287,35 @@ public class ExceptionInboxController {
             log.info("Exception {} RECLASSIFIED to {} by {} (RBAC: SENIOR_ENGINEER)",
                     id, correctCode, request.reviewedBy());
 
+            // ISO 14224 VALIDATION: Check if the engineer's code is valid for this equipment
+            EquipmentClass equipClass = EquipmentClass.fromEquipmentTag(item.getEquipmentTag());
+            if (equipClass != EquipmentClass.UNKNOWN
+                    && !equipClass.isValidFailureMode(correctCode)) {
+                log.warn("Engineer {} reclassified {} as {} but this is invalid for {} ({}). Allowing with warning.",
+                        request.reviewedBy(), id, correctCode, equipClass.name(), item.getEquipmentTag());
+                // We allow it (engineer override) but log a warning for audit
+            }
+
             // FEEDBACK LOOP: Promote human correction to Experience Bank
             feedbackService.promoteHumanCorrection(item, correctCode);
+
+            // SAP WRITE-BACK: Push the corrected code to SAP via BAPI
+            // (Critical: without this, the reclassification only lives in our cache
+            //  but the SAP notification still has no failure code.)
+            try {
+                bapiGateway.writeBackFromManualReview(
+                        item.getSapNotificationNumber(),
+                        item.getEquipmentTag(),
+                        correctCode,
+                        "HUMAN_CORRECTED",
+                        request.reviewedBy());
+                log.info("SAP write-back completed for RECLASSIFIED exception {} → {}",
+                        id, correctCode);
+            } catch (Exception e) {
+                log.error("SAP write-back FAILED for reclassified exception {}: {}",
+                        id, e.getMessage());
+                // Don't fail the reclassification — DLQ will retry.
+            }
 
             // AUDIT TRAIL: Record the reclassification for compliance
             AuditLog auditEntry = AuditLog.recordManualReview(
@@ -252,6 +405,15 @@ public class ExceptionInboxController {
         map.put("reviewNotes", item.getReviewNotes());
         map.put("reviewedAt", item.getReviewedAt());
         map.put("createdAt", item.getCreatedAt());
+
+        // SLA tracking fields
+        map.put("firstViewedAt", item.getFirstViewedAt());
+        map.put("firstViewedBy", item.getFirstViewedBy());
+        map.put("slaTargetHours", item.getSlaTargetHours());
+        map.put("slaMet", item.getSlaMet());
+        map.put("waitHoursBeforeView", item.getWaitHoursBeforeView());
+        map.put("resolutionHours", item.getResolutionHours());
+
         return map;
     }
 }

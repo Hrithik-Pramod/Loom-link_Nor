@@ -13,7 +13,7 @@ spring:
     password: industrial_grade_security
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: update
     show-sql: false
     properties:
       hibernate:
@@ -77,6 +77,13 @@ loomlink:
       criticality-weight: 0.15
       workorder-weight: 0.05
 
+  # Live Feed Configuration (Challenge 01 + 02 Scheduler Simulation)
+  live-feed:
+    enabled: true
+    sap-interval-ms: 25000
+    emission-enabled: true
+    emission-interval-ms: 30000
+
   # API Security — Sovereign Node Authentication
   # The API key is shared between SAP OData gateway and Loom Link.
   # On an air-gapped private network, this is sufficient.
@@ -116,4 +123,4 @@ springdoc:
   swagger-ui:
     path: /swagger-ui.html
     tags-sorter: alpha
-    operations-sorter: method
+    operations-sorter: me

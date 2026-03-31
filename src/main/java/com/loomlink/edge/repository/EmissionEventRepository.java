@@ -120,6 +120,12 @@ public interface EmissionEventRepository extends JpaRepository<EmissionEvent, UU
      */
     List<EmissionEvent> findAllByOrderByDetectedAtDesc();
 
+    /**
+     * Find all events detected after a given instant, ordered chronologically.
+     * Used for timeline chart visualization.
+     */
+    List<EmissionEvent> findAllByDetectedAtAfterOrderByDetectedAtAsc(Instant since);
+
     // ── Dashboard & KPI Metrics ────────────────────────────────────────
 
     /**

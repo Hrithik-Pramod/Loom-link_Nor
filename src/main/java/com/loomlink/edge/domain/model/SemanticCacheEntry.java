@@ -24,8 +24,11 @@ import java.util.UUID;
  * are never eligible for cache promotion — every uncertain case must go through
  * the full LLM + Reflector Gate pipeline.</p>
  *
- * <p>The embedding column uses pgvector's {@code vector(384)} type, matching
- * the all-MiniLM-L6-v2 sentence-transformer dimension.</p>
+ * <p><b>Conflict Detection:</b> When multiple engineers reclassify the same text pattern
+ * differently, the entry tracks correction history to detect disagreements. If
+ * {@code correctionCount >= 2} and the latest correction differs from the previous one,
+ * the entry is flagged as {@code disputed = true} and routed back through the LLM
+ * instead of being served from cache — forcing human consensus.</p>
  */
 @Entity
 @Table(name = "semantic_cache", indexes = {
@@ -63,8 +66,6 @@ public class SemanticCacheEntry {
      *
      * <p>For the Stavanger demo, we use a lightweight Java-native similarity hash
      * as a fallback until the sentence-transformer is deployed on the HM90.</p>
-     *
-     * <p>Stored as a float array — mapped to pgvector via native SQL.</p>
      */
     @Column(name = "text_embedding_hash", nullable = false)
     private long textEmbeddingHash;
@@ -103,6 +104,37 @@ public class SemanticCacheEntry {
     @Column(name = "source_notification_number")
     private String sourceNotificationNumber;
 
+    // ── Conflict Detection (Scenario 3) ────────────────────────────
+
+    /**
+     * How many times this entry has been corrected by human engineers.
+     * If correctionCount >= 2 and the code changed, the entry becomes disputed.
+     */
+    @Column(name = "correction_count", nullable = false)
+    private int correctionCount = 0;
+
+    /**
+     * The failure mode code BEFORE the latest human correction.
+     * Used to detect disagreements between engineers.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "previous_failure_code")
+    private FailureModeCode previousFailureCode;
+
+    /**
+     * Who last corrected this entry. Used to detect if different engineers disagree.
+     */
+    @Column(name = "last_corrected_by")
+    private String lastCorrectedBy;
+
+    /**
+     * True if two or more engineers have assigned DIFFERENT failure codes to this text.
+     * Disputed entries are NOT served from cache — they force fresh LLM classification
+     * and route to the Exception Inbox for consensus.
+     */
+    @Column(name = "disputed", nullable = false)
+    private boolean disputed = false;
+
     protected SemanticCacheEntry() {}
 
     /**
@@ -129,14 +161,13 @@ public class SemanticCacheEntry {
         entry.hitCount = 0;
         entry.createdAt = Instant.now();
         entry.sourceNotificationNumber = notification.getSapNotificationNumber();
+        entry.correctionCount = 0;
+        entry.disputed = false;
         return entry;
     }
 
     /**
      * Factory: promote a human-corrected classification from the Experience Bank Feedback Loop.
-     *
-     * <p>Used when a Senior Engineer reclassifies or approves a rejected notification.
-     * The correction is promoted to the cache so future similar text matches correctly.</p>
      */
     public static SemanticCacheEntry fromVerifiedClassification(
             String originalText,
@@ -156,7 +187,6 @@ public class SemanticCacheEntry {
                 : "";
         entry.equipmentTag = equipmentTag;
         entry.sapPlant = sapPlant;
-        // Compute a simple hash for the feedback entry
         entry.textEmbeddingHash = entry.normalizedText.hashCode();
         entry.failureModeCode = failureModeCode;
         entry.causeCode = causeCode;
@@ -166,6 +196,8 @@ public class SemanticCacheEntry {
         entry.hitCount = 0;
         entry.createdAt = Instant.now();
         entry.sourceNotificationNumber = sourceNotificationNumber;
+        entry.correctionCount = 1; // First human correction
+        entry.disputed = false;
         return entry;
     }
 
@@ -173,6 +205,71 @@ public class SemanticCacheEntry {
     public void recordHit() {
         this.hitCount++;
         this.lastHitAt = Instant.now();
+    }
+
+    /**
+     * Update this cache entry from a human correction (reclassification).
+     *
+     * <p><b>Conflict Detection:</b> If a different engineer corrects this entry to a
+     * DIFFERENT failure code than what's currently stored, the entry is marked as
+     * {@code disputed}. Disputed entries are skipped during cache lookup, forcing
+     * fresh LLM classification and human review until consensus is reached.</p>
+     *
+     * @param correctedCode the engineer's corrected failure mode code
+     * @param causeCode     the cause code
+     * @param confidence    confidence level (1.0 for human corrections)
+     * @param reasoning     reasoning including engineer name and notes
+     * @param modelId       source identifier (e.g., "human-feedback-v1")
+     */
+    public void updateFromHumanCorrection(FailureModeCode correctedCode, String causeCode,
+                                           double confidence, String reasoning, String modelId) {
+        // Track previous code for conflict detection
+        this.previousFailureCode = this.failureModeCode;
+
+        // Detect conflict: different engineer, different code
+        String newReviewer = extractReviewer(reasoning);
+        if (this.correctionCount > 0
+                && correctedCode != this.failureModeCode
+                && newReviewer != null
+                && this.lastCorrectedBy != null
+                && !newReviewer.equals(this.lastCorrectedBy)) {
+            // Two different engineers disagree on the classification
+            this.disputed = true;
+        }
+
+        // Apply the correction
+        this.failureModeCode = correctedCode;
+        this.causeCode = causeCode;
+        this.confidence = confidence;
+        this.reasoning = reasoning;
+        this.modelId = modelId;
+        this.correctionCount++;
+        this.lastCorrectedBy = newReviewer;
+        this.createdAt = Instant.now(); // Reset TTL on correction
+    }
+
+    /**
+     * Resolve a dispute — called when engineers reach consensus (e.g., via team review).
+     * Clears the disputed flag so the entry can be served from cache again.
+     */
+    public void resolveDispute(String resolvedBy, String resolution) {
+        this.disputed = false;
+        this.reasoning = "[DISPUTE RESOLVED by " + resolvedBy + "] " + resolution
+                + " | Previous: " + this.reasoning;
+    }
+
+    /**
+     * Extract reviewer name from reasoning string.
+     * Reasoning format: "[HUMAN CORRECTION by Lars Hansen] ..."
+     */
+    private String extractReviewer(String reasoning) {
+        if (reasoning == null) return null;
+        int start = reasoning.indexOf("by ");
+        int end = reasoning.indexOf("]", start);
+        if (start >= 0 && end > start) {
+            return reasoning.substring(start + 3, end).trim();
+        }
+        return null;
     }
 
     // Getters
@@ -191,19 +288,15 @@ public class SemanticCacheEntry {
     public Instant getLastHitAt() { return lastHitAt; }
     public Instant getCreatedAt() { return createdAt; }
     public String getSourceNotificationNumber() { return sourceNotificationNumber; }
-
     /**
-     * Update this cache entry from a human correction (reclassification).
-     * This is the core of the Experience Bank learning loop — when an engineer
-     * corrects a classification, the cache entry is OVERWRITTEN so that future
-     * lookups return the corrected code, not the original LLM suggestion.
+     * Override normalized text — used by SemanticCacheService to apply Norwegian keyword
+     * translation. The factory methods do basic normalization; the service adds the
+     * cross-language keyword layer on top.
      */
-    public void updateFromHumanCorrection(FailureModeCode correctedCode, String causeCode,
-                                           double confidence, String reasoning, String modelId) {
-        this.failureModeCode = correctedCode;
-        this.causeCode = causeCode;
-        this.confidence = confidence;
-        this.reasoning = reasoning;
-        this.modelId = modelId;
-    }
+    public void setNormalizedText(String normalizedText) { this.normalizedText = normalizedText; }
+
+    public int getCorrectionCount() { return correctionCount; }
+    public FailureModeCode getPreviousFailureCode() { return previousFailureCode; }
+    public String getLastCorrectedBy() { return lastCorrectedBy; }
+    public boolean isDisputed() { return disputed; }
 }

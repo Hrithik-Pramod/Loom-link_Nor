@@ -233,6 +233,83 @@
             position: absolute; width: 2px; height: 16px; background: white;
             top: -4px;
         }
+
+        /* ── Live Feed Ticker ──────────────────────────── */
+        .live-feed-bar {
+            background: linear-gradient(135deg, #0d1321 0%, #111827 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 0;
+            overflow: hidden;
+            position: relative;
+        }
+        .live-feed-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 24px; border-bottom: 1px solid rgba(59,130,246,0.1);
+        }
+        .live-feed-title {
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--accent-blue);
+            display: flex; align-items: center; gap: 8px;
+        }
+        .live-feed-title .pulse-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green);
+            animation: statusPulse 1.5s infinite;
+        }
+        .live-feed-title .paused-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: var(--accent-orange);
+            animation: statusPulse 1s infinite;
+        }
+        .live-feed-controls {
+            display: flex; align-items: center; gap: 10px;
+        }
+        .feed-btn {
+            padding: 4px 14px; border-radius: 6px; font-size: 11px; font-weight: 600;
+            cursor: pointer; border: 1px solid; transition: all 0.2s;
+        }
+        .feed-btn-pause { background: rgba(245,158,11,0.15); color: var(--accent-orange); border-color: rgba(245,158,11,0.3); }
+        .feed-btn-resume { background: rgba(16,185,129,0.15); color: var(--accent-green); border-color: rgba(16,185,129,0.3); }
+        .feed-btn:hover { transform: translateY(-1px); }
+        .live-feed-scroll {
+            max-height: 140px; overflow-y: auto; padding: 6px 24px;
+            scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+        }
+        .feed-event {
+            display: flex; align-items: flex-start; gap: 10px; padding: 5px 0;
+            font-size: 12px; border-bottom: 1px solid rgba(255,255,255,0.03);
+            animation: feedSlideIn 0.4s ease-out;
+        }
+        @keyframes feedSlideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .feed-source {
+            padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;
+            flex-shrink: 0; min-width: 52px; text-align: center; letter-spacing: 0.5px;
+        }
+        .feed-source-sap_odata { background: rgba(59,130,246,0.2); color: var(--accent-blue); }
+        .feed-source-sara { background: rgba(16,185,129,0.2); color: var(--accent-green); }
+        .feed-source-mission { background: rgba(139,92,246,0.2); color: var(--accent-purple); }
+        .feed-source-system { background: rgba(245,158,11,0.2); color: var(--accent-orange); }
+        .feed-time { font-size: 10px; color: var(--text-secondary); flex-shrink: 0; min-width: 58px; }
+        .feed-text { color: var(--text-primary); line-height: 1.4; }
+        .feed-badge { font-size: 9px; padding: 1px 6px; border-radius: 3px; font-weight: 700; margin-left: 6px; }
+        .feed-badge-pass { background: rgba(16,185,129,0.2); color: var(--accent-green); }
+        .feed-badge-reject { background: rgba(239,68,68,0.2); color: var(--accent-red); }
+        .feed-badge-fugitive { background: rgba(239,68,68,0.3); color: var(--accent-red); border: 1px solid rgba(239,68,68,0.4); }
+
+        /* ── User Session Bar ──────────────────────────── */
+        .user-bar {
+            display: flex; align-items: center; gap: 8px;
+        }
+        .user-avatar {
+            width: 28px; height: 28px; border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 700;
+        }
+        .user-info { font-size: 11px; }
+        .user-name { font-weight: 600; color: var(--text-primary); }
+        .user-role { color: var(--accent-blue); font-weight: 600; }
     </style>
 </head>
 <body>
@@ -241,8 +318,8 @@
         <div class="header-left">
             <div class="logo">LOOM LINK</div>
             <span class="header-badge badge-sovereign">SOVEREIGN INTELLIGENCE LAYER</span>
-            <span class="header-badge badge-challenge">CHALLENGE 01 + 02 + 04</span>
-            <span class="header-badge" style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);">MAINTENANCE + EMISSIONS + ROBOTICS</span>
+            <span class="header-badge badge-challenge">CHALLENGE 01 + 02</span>
+            <span class="header-badge" style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);">SAP OData + SARA</span>
             <span class="header-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);">EN/NO BILINGUAL</span>
         </div>
         <div class="header-right">
@@ -254,9 +331,48 @@
                 <span class="status-dot live" style="background:var(--accent-blue)"></span>
                 Reflector Gate Active
             </div>
-            <a href="/swagger-ui.html" target="_blank" style="font-size:11px;padding:4px 10px;border-radius:6px;background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);text-decoration:none;font-weight:600;">API Docs</a>
-            <div class="status-indicator" style="color: var(--text-primary); font-weight: 600;">
-                Nordic Energy Matchbox 2026
+            <div class="user-bar" id="user-bar">
+                <div class="user-avatar" id="user-avatar">LH</div>
+                <div class="user-info">
+                    <div class="user-name" id="user-name">Lars Henriksen</div>
+                    <div class="user-role" id="user-role">SENIOR ENGINEER</div>
+                </div>
+            </div>
+            <button onclick="resetAllDemo()" style="font-size:10px;padding:4px 12px;border-radius:6px;background:rgba(245,158,11,0.15);color:var(--accent-orange);border:1px solid rgba(245,158,11,0.3);cursor:pointer;font-weight:600;letter-spacing:0.5px;" title="Clear all demo data and restart fresh">RESET ALL</button>
+            <a href="/login.html" style="font-size:10px;padding:3px 10px;border-radius:6px;background:rgba(239,68,68,0.1);color:var(--accent-red);border:1px solid rgba(239,68,68,0.2);text-decoration:none;font-weight:600;">Logout</a>
+        </div>
+    </div>
+
+    <!-- Live Feed Ticker — Split Ch1 / Ch2 -->
+    <div class="live-feed-bar" id="live-feed-bar" style="display:grid;grid-template-columns:1fr 1fr;">
+        <!-- Ch1: Maintenance Classification -->
+        <div style="border-right:1px solid var(--border);">
+            <div class="live-feed-header">
+                <div class="live-feed-title">
+                    <span class="pulse-dot" id="ch1-feed-dot"></span>
+                    <span style="color:var(--accent-blue);">SAP OData Listener — Maintenance</span>
+                </div>
+                <div class="live-feed-controls">
+                    <button class="feed-btn feed-btn-pause" id="ch1-pause-btn" onclick="toggleCh1Pause()">Pause</button>
+                </div>
+            </div>
+            <div class="live-feed-scroll" id="ch1-feed-scroll" style="max-height:120px;">
+                <div style="font-size:11px;color:var(--text-secondary);padding:10px 0;text-align:center;">Connecting to SAP OData feed...</div>
+            </div>
+        </div>
+        <!-- Ch2: Emission Surveillance -->
+        <div>
+            <div class="live-feed-header">
+                <div class="live-feed-title">
+                    <span class="pulse-dot" id="ch2-feed-dot"></span>
+                    <span style="color:var(--accent-green);">SARA Robot Feed — Emissions</span>
+                </div>
+                <div class="live-feed-controls">
+                    <button class="feed-btn feed-btn-pause" id="ch2-pause-btn" onclick="toggleCh2Pause()">Pause</button>
+                </div>
+            </div>
+            <div class="live-feed-scroll" id="ch2-feed-scroll" style="max-height:120px;">
+                <div style="font-size:11px;color:var(--text-secondary);padding:10px 0;text-align:center;">Connecting to SARA feed...</div>
             </div>
         </div>
     </div>
@@ -285,7 +401,7 @@
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-value" style="color:var(--accent-green);" id="kpi-passed">—</div>
-                    <div class="kpi-label">Gate Passed → SAP</div>
+                    <div class="kpi-label">Gate Passed → SAP OData</div>
                 </div>
                 <div class="kpi-card">
                     <div class="kpi-value" style="color:var(--accent-red);" id="kpi-rejected">—</div>
@@ -299,11 +415,11 @@
 
             <!-- Tabs -->
             <div class="tabs">
-                <button class="tab active" onclick="switchTab('pipeline')">Classify</button>
+                <button class="tab active" onclick="switchTab('pipeline')">SAP OData Classify</button>
                 <button class="tab" onclick="switchTab('inbox')">Exception Inbox <span id="inbox-badge" style="background:var(--accent-red);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none;">0</span></button>
                 <button class="tab" onclick="switchTab('resilience')">Experience Bank</button>
-                <button class="tab" onclick="switchTab('emissions')">Emission Surveillance</button>
-                <button class="tab" onclick="switchTab('missions')">Mission Planning</button>
+                <button class="tab" onclick="switchTab('emissions')">SARA Emissions</button>
+                <!-- <button class="tab" onclick="switchTab('missions')">Mission Planning</button> -->
                 <button class="tab" onclick="switchTab('audit')">Audit Trail</button>
                 <button class="tab" onclick="switchTab('overview')">Fleet Intelligence</button>
                 <button class="tab" onclick="switchTab('detail')">Asset Detail</button>
@@ -521,7 +637,7 @@
             <!-- Tab: Emission Surveillance (Challenge 02) -->
             <div id="tab-emissions" class="tab-content">
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-                    <div class="section-title" style="margin-bottom:0;">Emission Surveillance — Robot Sensor Intelligence</div>
+                    <div class="section-title" style="margin-bottom:0;">Emission Surveillance — SARA Robot Intelligence</div>
                     <div style="display:flex;gap:8px;">
                         <span class="header-badge" style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);">CHALLENGE 02</span>
                         <span class="header-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);">EU 2024/1787</span>
@@ -553,11 +669,23 @@
                     </div>
                 </div>
 
+                <!-- Emission Trend Chart (7-Day Timeline) -->
+                <div class="card" style="margin-bottom:20px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div class="card-title" style="margin-bottom:0;">7-Day Emission Trend</div>
+                        <button class="btn" onclick="loadEmissionTrendChart()" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:4px 12px;font-size:11px;">Refresh Chart</button>
+                    </div>
+                    <div id="em-trend-chart" style="position:relative;height:200px;padding:8px 0;">
+                        <div style="color:var(--text-secondary);font-size:13px;text-align:center;padding-top:80px;">Loading trend data...</div>
+                    </div>
+                    <div id="em-trend-legend" style="display:flex;gap:16px;justify-content:center;margin-top:8px;flex-wrap:wrap;"></div>
+                </div>
+
                 <!-- Emission Ingest Panel + Classification Distribution -->
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:20px;">
                     <!-- Ingest Panel -->
                     <div class="test-panel">
-                        <div class="card-title">Simulate Robot Sensor Detection (SARA-Compatible)</div>
+                        <div class="card-title">Simulate SARA Sensor Payload</div>
                         <div class="test-grid">
                             <div>
                                 <label class="action-label">Equipment Tag</label>
@@ -597,11 +725,11 @@
                         </div>
                         <div class="test-grid">
                             <div>
-                                <label class="action-label">Robot ID</label>
+                                <label class="action-label">SARA Robot ID</label>
                                 <input id="em-robot" value="spot-001" />
                             </div>
                             <div>
-                                <label class="action-label">Mission ID</label>
+                                <label class="action-label">SARA Mission ID</label>
                                 <input id="em-mission" value="PATROL-2026-Q1-087" />
                             </div>
                         </div>
@@ -624,7 +752,7 @@
                         </div>
 
                         <button class="btn btn-primary" id="em-submit" onclick="submitEmissionIngest()" style="width:100%;">
-                            Run Emission Pipeline (Context + Fusion + LLM + Gate + Compliance)
+                            Ingest SARA Payload → Emission Pipeline
                         </button>
                         <div id="em-loading" class="hidden" style="margin-top:12px;">
                             <span class="spinner"></span> Processing through emission surveillance pipeline...
@@ -667,15 +795,19 @@
 
             <!-- Tab: Exception Inbox -->
             <div id="tab-inbox" class="tab-content">
+                <!-- ═══ Ch1: Maintenance Exception Inbox ═══ -->
                 <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
-                    <div class="section-title" style="margin-bottom:0;">Exception Inbox — Rejected Classifications</div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div class="section-title" style="margin-bottom:0;">SAP OData — Maintenance Exceptions</div>
+                        <span class="header-badge badge-challenge" style="font-size:9px;padding:2px 8px;">CHALLENGE 01</span>
+                    </div>
                     <button class="btn" onclick="loadExceptionInbox()"
                         style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:6px 14px;font-size:12px;">
                         Refresh
                     </button>
                 </div>
 
-                <!-- Inbox Stats -->
+                <!-- Ch1 Inbox Stats -->
                 <div id="inbox-stats" style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:16px;">
                     <div class="card" style="text-align:center;padding:14px;">
                         <div style="font-size:28px;font-weight:700;color:var(--accent-orange);" id="inbox-stat-pending">0</div>
@@ -695,9 +827,49 @@
                     </div>
                 </div>
 
-                <!-- Inbox Items -->
+                <!-- Ch1 Inbox Items -->
                 <div id="inbox-items">
                     <div class="card"><div class="spinner"></div> Loading exception inbox...</div>
+                </div>
+
+                <!-- ═══ Ch2: Emission Exception Inbox ═══ -->
+                <div style="margin-top:32px;padding-top:24px;border-top:2px solid var(--border);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <div class="section-title" style="margin-bottom:0;">SARA — Emission Exceptions</div>
+                            <span class="header-badge" style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);font-size:9px;padding:2px 8px;">CHALLENGE 02</span>
+                            <span class="header-badge" style="background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);font-size:9px;padding:2px 8px;">EU 2024/1787</span>
+                        </div>
+                        <button class="btn" onclick="loadEmissionInbox()"
+                            style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:6px 14px;font-size:12px;">
+                            Refresh
+                        </button>
+                    </div>
+
+                    <!-- Ch2 Inbox Stats -->
+                    <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:12px; margin-bottom:16px;">
+                        <div class="card" style="text-align:center;padding:14px;">
+                            <div style="font-size:28px;font-weight:700;color:var(--accent-orange);" id="em-inbox-pending">0</div>
+                            <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Pending Review</div>
+                        </div>
+                        <div class="card" style="text-align:center;padding:14px;">
+                            <div style="font-size:28px;font-weight:700;color:var(--accent-green);" id="em-inbox-confirmed">0</div>
+                            <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Confirmed</div>
+                        </div>
+                        <div class="card" style="text-align:center;padding:14px;">
+                            <div style="font-size:28px;font-weight:700;color:var(--accent-blue);" id="em-inbox-reclassified">0</div>
+                            <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Reclassified</div>
+                        </div>
+                        <div class="card" style="text-align:center;padding:14px;">
+                            <div style="font-size:28px;font-weight:700;color:var(--text-secondary);" id="em-inbox-dismissed">0</div>
+                            <div style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Dismissed</div>
+                        </div>
+                    </div>
+
+                    <!-- Ch2 Emission Inbox Items -->
+                    <div id="em-inbox-items">
+                        <div class="card" style="text-align:center;color:var(--text-secondary);padding:30px;">No emission exceptions yet. Rejected SARA detections will appear here.</div>
+                    </div>
                 </div>
             </div>
 
@@ -779,7 +951,7 @@
                     <div class="card-title">Plan New AI Mission</div>
                     <div style="display:grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap:12px; align-items:end;">
                         <div>
-                            <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">ROBOT ID</label>
+                            <label style="font-size:11px;color:var(--text-secondary);display:block;margin-bottom:4px;">SARA ROBOT ID</label>
                             <select id="mission-robot" style="width:100%;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:13px;">
                                 <option value="spot-001">Spot-001</option>
                                 <option value="spot-002">Spot-002</option>
@@ -946,7 +1118,7 @@
                     </div>
                 </div>
 
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
                     <!-- Cache Efficiency -->
                     <div class="card" style="border-top:3px solid var(--accent-purple);">
                         <div class="card-title">Semantic Cache Efficiency</div>
@@ -956,6 +1128,44 @@
                     <div class="card" style="border-top:3px solid var(--accent-orange);">
                         <div class="card-title">Operational Savings Estimate</div>
                         <div id="an-savings-detail" style="font-size:13px;line-height:2;"></div>
+                    </div>
+                </div>
+
+                <!-- ═══════ Facility Risk Assessment (Challenge 01: "Apply risk on system level") ═══════ -->
+                <div class="section-title" style="margin-bottom:16px; margin-top:8px;">Facility Risk Assessment — System-Level Risk Intelligence</div>
+                <div style="display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:24px;">
+                    <div class="kpi-card" id="risk-score-card" style="border-top:3px solid var(--accent-red);">
+                        <div class="kpi-value" style="font-size:28px;" id="risk-score">--</div>
+                        <div class="kpi-label">Facility Risk Score</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-orange);">
+                        <div class="kpi-value" style="color:var(--accent-orange);" id="risk-aging">0</div>
+                        <div class="kpi-label">Aging Assets (&gt;80% Life)</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-red);">
+                        <div class="kpi-value" style="color:var(--accent-red);" id="risk-critical">0</div>
+                        <div class="kpi-label">Critical Aging (&gt;90%)</div>
+                    </div>
+                    <div class="kpi-card" style="border-top:3px solid var(--accent-blue);">
+                        <div class="kpi-value" style="color:var(--accent-blue);" id="risk-avg-rul">--</div>
+                        <div class="kpi-label">Avg RUL (Years)</div>
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom:24px;">
+                    <!-- Risk Breakdown by Asset -->
+                    <div class="card" style="border-top:3px solid var(--accent-red);">
+                        <div class="card-title">Asset Risk Ranking — Top Concerns</div>
+                        <div id="risk-asset-breakdown" style="font-size:13px;line-height:1.8;max-height:280px;overflow-y:auto;"></div>
+                    </div>
+                    <!-- Exception Risk Summary -->
+                    <div class="card" style="border-top:3px solid var(--accent-orange);">
+                        <div class="card-title">Open Exception Risk</div>
+                        <div id="risk-exception-summary" style="font-size:13px;line-height:2;"></div>
+                        <div style="margin-top:16px;padding:14px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-blue);">
+                            <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--accent-blue);margin-bottom:6px;">Phase 2 Intelligence</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Risk scores will drive <strong style="color:var(--text-primary);">execution scheduling</strong> — highest-risk assets get maintenance priority. Experience Bank patterns will generate <strong style="color:var(--text-primary);">PM programs</strong> for similar equipment across the fleet.</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1004,84 +1214,87 @@
 
             <!-- Tab: Roadmap -->
             <div id="tab-roadmap" class="tab-content">
-                <div class="section-title" style="margin-bottom:24px;">Future Roadmap — Where Structured Data Takes Us</div>
+                <div class="section-title" style="margin-bottom:24px;">Loom Link Roadmap — Sovereign Intelligence Layer</div>
 
-                <!-- Current: What's Live -->
+                <!-- Challenge 01: SAP OData Listener — LIVE -->
                 <div class="card" style="border-top:3px solid var(--accent-green); margin-bottom:24px;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE NOW</span>
-                        <span class="card-title" style="margin-bottom:0;">Challenge 01 — Free-Text to Structured Intelligence</span>
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE</span>
+                        <span class="card-title" style="margin-bottom:0;">Challenge 01 — SAP OData Listener → Maintenance Intelligence</span>
+                    </div>
+                    <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
+                        Free-text SAP PM notifications consumed via <strong style="color:var(--text-primary);">OData listener</strong>, classified by Mistral 7B into ISO 14224 failure codes, governed by Reflector Gate (0.85 threshold), and written back to SAP via certified BAPI. <strong style="color:var(--text-primary);">30% man-hour recovery</strong> through structured data.
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-green);">
-                            <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">Semantic Analysis</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Mistral 7B classifies free-text SAP notifications into ISO 14224 failure codes. Bilingual EN/NO support.</div>
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">SAP OData Listener</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Real-time consumption of PM notifications via OData. Bilingual EN/NO free-text classification into ISO 14224 codes.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-orange);">
                             <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">Reflector Gate</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Deterministic 0.85 confidence threshold. Binary pass/fail. Zero hallucination into SAP.</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Deterministic 0.85 confidence threshold. Binary pass/fail. Zero hallucination into SAP. Rejected → human review.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-purple);">
                             <div style="font-size:14px;font-weight:700;color:var(--accent-purple);margin-bottom:6px;">Experience Bank</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Growing semantic cache. Senior Engineer corrections feed back. System improves with every review.</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Shared semantic cache. Senior Engineer corrections feed back. System improves with every review. Cross-challenge learning.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-blue);">
-                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">SAP Write-Back</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Clean Core compliant BAPI integration. Structured failure codes written to SAP without ERP modification.</div>
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">SAP OData Write-Back</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Clean Core compliant OData/BAPI integration. Structured failure codes written to SAP without ERP modification.</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Challenge 02: Emission Surveillance (LIVE) -->
+                <!-- Challenge 02: SARA Robot Feed — LIVE -->
                 <div class="card" style="border-top:3px solid var(--accent-green); margin-bottom:24px;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE NOW</span>
-                        <span class="card-title" style="margin-bottom:0;">Challenge 02 — Contextual Emission Surveillance</span>
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE</span>
+                        <span class="card-title" style="margin-bottom:0;">Challenge 02 — SARA Robot Feed → Emission Surveillance</span>
                     </div>
                     <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
-                        Robot-acquired sensor data from Equinor's ISAR/Flotilla platforms is enriched with <strong style="color:var(--text-primary);">SAP operational context</strong>, processed through <strong style="color:var(--text-primary);">multi-modal sensor fusion</strong>, and classified by Mistral 7B into emission categories. The system distinguishes real fugitive leaks from planned venting, maintenance activity, and sensor artifacts — generating <strong style="color:var(--text-primary);">EU 2024/1787 compliance records</strong> automatically.
+                        SARA robot-acquired sensor data from Equinor's ISAR/Flotilla platforms is enriched with <strong style="color:var(--text-primary);">SAP OData operational context</strong>, processed through <strong style="color:var(--text-primary);">multi-modal sensor fusion</strong> (CH4 + thermal + acoustic), and classified into emission categories. Generates <strong style="color:var(--text-primary);">EU 2024/1787 compliance records</strong> and <strong style="color:var(--text-primary);">prescriptive remediation actions</strong> automatically.
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-green);">
-                            <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">Multi-Modal Fusion</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">CH4 + thermal + acoustic sensor correlation for high-confidence classification. 3-sensor convergence = 0.92+ confidence.</div>
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">SARA Sensor Fusion</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Multi-modal CH4 + thermal + acoustic from SARA robot patrols. 3-sensor convergence = 0.92+ confidence.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-orange);">
-                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">SAP Context Engine</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Active work orders, turnaround schedule, and maintenance history from SAP suppress 60%+ false positives.</div>
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">SAP OData Context</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Active work orders, turnaround schedule, and maintenance history from SAP OData suppress 60%+ false positives.</div>
                         </div>
-                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-purple);">
-                            <div style="font-size:14px;font-weight:700;color:var(--accent-purple);margin-bottom:6px;">Leak Quantification</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Physics-based kg/hr estimation using concentration, distance, and equipment type factors. EU 2024/1787 mandated.</div>
+                        <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-red);">
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-red);margin-bottom:6px;">Prescriptive Remediation</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Equipment-specific repair actions with urgency levels. Flange torque specs, valve packing procedures, isolation protocols.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-blue);">
-                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">Compliance Automation</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">72-hour response tracking, auto-generated compliance records, and SAP work orders for confirmed fugitive emissions.</div>
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">EU 2024/1787 Compliance</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">72-hour response tracking, leak quantification (kg/hr), compliance records, and SAP work orders for fugitive emissions.</div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Challenge 04: AI-Enhanced Operational Robotics (LIVE) -->
+                <!-- Challenge 04: SARA/ISAR Mission Planning — LIVE -->
                 <div class="card" style="border-top:3px solid var(--accent-green); margin-bottom:24px;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE NOW</span>
-                        <span class="card-title" style="margin-bottom:0;">Challenge 04 — AI-Enhanced Operational Robotics</span>
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(16,185,129,0.2);color:var(--accent-green);font-weight:700;">LIVE</span>
+                        <span class="card-title" style="margin-bottom:0;">Challenge 04 — SARA/ISAR Mission Planning → Intelligent Robotics</span>
                     </div>
                     <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
-                        Moving from scripted patrol routes to <strong style="color:var(--text-primary);">intelligent, risk-driven mission planning</strong>. Loom Link scores every equipment item using emission history, RUL forecasts, and SAP context, then generates optimized inspection routes for <strong style="color:var(--text-primary);">ISAR/Flotilla-compatible</strong> robots. The circular intelligence loop: Challenge 01 feeds RUL data → Challenge 04 prioritizes inspections → Challenge 02 classifies findings → back to Challenge 01.
+                        Risk-driven mission planning for <strong style="color:var(--text-primary);">SARA/ISAR/Flotilla-compatible</strong> robots. Equipment scored on emission history, RUL forecasts, and SAP OData context. The <strong style="color:var(--text-primary);">circular intelligence loop</strong>: SAP OData (Ch1) feeds failure data → Ch4 prioritizes inspections → SARA (Ch2) classifies findings → back to SAP OData.
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;">
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-green);">
                             <div style="font-size:14px;font-weight:700;color:var(--accent-green);margin-bottom:6px;">Risk Scoring Engine</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">6-dimensional equipment risk assessment: emission history, trend, RUL, recency, criticality, work orders.</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">6-dimensional assessment: emission history, trend, RUL, recency, criticality, SAP work orders.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-orange);">
                             <div style="font-size:14px;font-weight:700;color:var(--accent-orange);margin-bottom:6px;">ISAR Mission Generation</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">AI-generated mission definitions compatible with Equinor's ISAR robot interface for direct dispatch.</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">AI-generated mission definitions compatible with Equinor's ISAR/Flotilla interface for direct robot dispatch.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-purple);">
                             <div style="font-size:14px;font-weight:700;color:var(--accent-purple);margin-bottom:6px;">Multi-Platform Fleet</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Spot, ANYmal, ExR-2, TurtleBot — sensor capability matching and battery-aware mission planning.</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Spot, ANYmal, ExR-2 — sensor capability matching and battery-aware SARA mission planning.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;border-left:3px solid var(--accent-blue);">
                             <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">Adaptive Prioritization</div>
@@ -1090,14 +1303,49 @@
                     </div>
                 </div>
 
+                <!-- Integration Loop Diagram -->
+                <div class="card" style="border-top:3px solid var(--accent-purple); margin-bottom:24px;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;">
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(139,92,246,0.2);color:var(--accent-purple);font-weight:700;">INTEGRATION</span>
+                        <span class="card-title" style="margin-bottom:0;">Circular Intelligence Loop — Shared Infrastructure</span>
+                    </div>
+                    <div style="display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;padding:20px 0;">
+                        <div style="text-align:center;padding:16px 20px;background:rgba(59,130,246,0.1);border-radius:12px;border:2px solid rgba(59,130,246,0.3);">
+                            <div style="font-size:13px;font-weight:700;color:var(--accent-blue);">SAP OData</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Ch1: Maintenance</div>
+                        </div>
+                        <div style="font-size:20px;color:var(--accent-orange);padding:0 8px;">→</div>
+                        <div style="text-align:center;padding:16px 20px;background:rgba(139,92,246,0.1);border-radius:12px;border:2px solid rgba(139,92,246,0.3);">
+                            <div style="font-size:13px;font-weight:700;color:var(--accent-purple);">Experience Bank</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Shared Cache</div>
+                        </div>
+                        <div style="font-size:20px;color:var(--accent-orange);padding:0 8px;">→</div>
+                        <div style="text-align:center;padding:16px 20px;background:rgba(245,158,11,0.1);border-radius:12px;border:2px solid rgba(245,158,11,0.3);">
+                            <div style="font-size:13px;font-weight:700;color:var(--accent-orange);">Ch4: Mission Plan</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Risk Scoring</div>
+                        </div>
+                        <div style="font-size:20px;color:var(--accent-orange);padding:0 8px;">→</div>
+                        <div style="text-align:center;padding:16px 20px;background:rgba(16,185,129,0.1);border-radius:12px;border:2px solid rgba(16,185,129,0.3);">
+                            <div style="font-size:13px;font-weight:700;color:var(--accent-green);">SARA Robot</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Ch2: Emissions</div>
+                        </div>
+                        <div style="font-size:20px;color:var(--accent-orange);padding:0 8px;">→</div>
+                        <div style="text-align:center;padding:16px 20px;background:rgba(59,130,246,0.1);border-radius:12px;border:2px solid rgba(59,130,246,0.3);">
+                            <div style="font-size:13px;font-weight:700;color:var(--accent-blue);">SAP OData</div>
+                            <div style="font-size:11px;color:var(--text-secondary);">Work Order</div>
+                        </div>
+                    </div>
+                    <div style="text-align:center;font-size:12px;color:var(--text-secondary);margin-top:8px;">All three challenges share: Reflector Gate, Experience Bank, RBAC, SAP OData Gateway, Audit Trail, Live Feed SSE</div>
+                </div>
+
                 <!-- Phase 2: Scheduling -->
-                <div class="card" style="border-top:3px solid var(--accent-orange); margin-bottom:24px;">
+                <div class="card" style="border-top:3px solid var(--accent-orange); margin-bottom:24px; opacity:0.85;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(245,158,11,0.2);color:var(--accent-orange);font-weight:700;">PHASE 2</span>
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(245,158,11,0.2);color:var(--accent-orange);font-weight:700;">NEXT</span>
                         <span class="card-title" style="margin-bottom:0;">Work Planning & Scheduling Optimization</span>
                     </div>
                     <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
-                        With structured failure data now flowing reliably into SAP, the next phase optimizes <strong style="color:var(--text-primary);">when</strong> and <strong style="color:var(--text-primary);">how</strong> maintenance work gets executed. AI-driven scheduling will spread workload evenly across crews and shifts, matching maintenance urgency to available capacity.
+                        With structured failure data flowing reliably into SAP via OData, the next phase optimizes <strong style="color:var(--text-primary);">when</strong> and <strong style="color:var(--text-primary);">how</strong> maintenance work gets executed. AI-driven scheduling will spread workload evenly across crews and shifts, matching urgency to available capacity.
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
@@ -1116,13 +1364,13 @@
                 </div>
 
                 <!-- Phase 3: PM Programs -->
-                <div class="card" style="border-top:3px solid var(--accent-blue); margin-bottom:24px;">
+                <div class="card" style="border-top:3px solid var(--accent-blue); margin-bottom:24px; opacity:0.75;">
                     <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
-                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(59,130,246,0.2);color:var(--accent-blue);font-weight:700;">PHASE 3</span>
+                        <span style="font-size:11px;padding:3px 10px;border-radius:10px;background:rgba(59,130,246,0.2);color:var(--accent-blue);font-weight:700;">FUTURE</span>
                         <span class="card-title" style="margin-bottom:0;">PM Program Generation for New Assets</span>
                     </div>
                     <div style="font-size:13px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px;">
-                        Leverage the Experience Bank to create preventive maintenance programs for green field projects. The system searches existing equipment programs on similar assets, checks specifications, and recommends appropriate PM programs with intervals — all integrated with SAP/Fiori.
+                        Leverage the Experience Bank to create preventive maintenance programs for green field projects. The system searches existing equipment programs on similar assets, checks specifications, and recommends appropriate PM programs with intervals — all integrated with SAP OData/Fiori.
                     </div>
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
@@ -1134,8 +1382,8 @@
                             <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Recommend maintenance intervals based on actual failure history, not calendar assumptions. Data-driven PM programs.</div>
                         </div>
                         <div style="padding:16px;background:var(--bg-primary);border-radius:8px;">
-                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">SAP/Fiori Integration</div>
-                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Generated PM programs written directly to SAP via BAPI. Accessible through existing Fiori apps. Zero workflow disruption.</div>
+                            <div style="font-size:14px;font-weight:700;color:var(--accent-blue);margin-bottom:6px;">SAP OData/Fiori Integration</div>
+                            <div style="font-size:12px;color:var(--text-secondary);line-height:1.5;">Generated PM programs written directly to SAP via OData/BAPI. Accessible through existing Fiori apps. Zero workflow disruption.</div>
                         </div>
                     </div>
                 </div>
@@ -1144,7 +1392,7 @@
                 <div class="card" style="text-align:center;padding:32px;background:linear-gradient(135deg, rgba(13,148,136,0.1), rgba(139,92,246,0.1));border:1px solid rgba(13,148,136,0.3);">
                     <div style="font-size:24px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">Minimal Human Interface by 2026</div>
                     <div style="font-size:14px;color:var(--text-secondary);max-width:700px;margin:0 auto;line-height:1.6;">
-                        Structured data is the foundation. Scheduling optimization is the multiplier. PM program generation closes the loop. Each phase builds on the intelligence created by the one before it — all running locally on the sovereign node, all integrated through SAP Clean Core.
+                        SAP OData listener structures maintenance data. SARA robots detect and quantify emissions. Intelligent mission planning closes the loop. Each challenge builds on the intelligence created by the others — all running locally on the HM90 sovereign node, all integrated through SAP Clean Core.
                     </div>
                 </div>
             </div>
@@ -1202,9 +1450,239 @@ const samples = [
 ];
 let demoModeOn = false;
 let pipelineHistory = [];
+let feedPaused = false;
+let feedEventSource = null;
+
+// ── Login Session ──────────────────────────────────────────────
+function initUserSession() {
+    const params = new URLSearchParams(window.location.search);
+    const user = params.get('user') || sessionStorage.getItem('loomlink-user') || 'lars.henriksen';
+    const role = params.get('role') || sessionStorage.getItem('loomlink-role') || 'SENIOR_ENGINEER';
+    sessionStorage.setItem('loomlink-user', user);
+    sessionStorage.setItem('loomlink-role', role);
+
+    const nameEl = document.getElementById('user-name');
+    const roleEl = document.getElementById('user-role');
+    const avatarEl = document.getElementById('user-avatar');
+    if (nameEl) {
+        const displayNames = {
+            'lars.henriksen': 'Lars Henriksen',
+            'admin': 'System Admin',
+            'ingrid.johansen': 'Ingrid Johansen'
+        };
+        nameEl.textContent = displayNames[user] || user;
+    }
+    if (roleEl) roleEl.textContent = role.replace('_', ' ');
+    if (avatarEl) {
+        const initials = { 'lars.henriksen': 'LH', 'admin': 'AD', 'ingrid.johansen': 'IJ' };
+        avatarEl.textContent = initials[user] || user.substring(0, 2).toUpperCase();
+    }
+}
+
+// ── Live Feed SSE (Split Ch1/Ch2) ─────────────────────────────────
+let ch1Paused = false;
+let ch2Paused = false;
+
+function connectLiveFeed() {
+    feedEventSource = new EventSource(API + '/api/v1/live-feed/stream');
+
+    feedEventSource.addEventListener('live-feed', function(e) {
+        try {
+            const event = JSON.parse(e.data);
+            appendFeedEvent(event);
+
+            // Auto-refresh KPIs and inbox badge
+            loadTopKpis();
+            loadInboxBadge();
+
+            // If a reject, refresh the appropriate inbox
+            if (event.gatePassed === false) {
+                const inboxTab = document.getElementById('tab-inbox');
+                if (inboxTab && inboxTab.classList.contains('active')) {
+                    if (event.source === 'SARA') loadEmissionInbox();
+                    else loadExceptionInbox();
+                }
+            }
+
+            // Refresh audit trail if viewing
+            const auditTab = document.getElementById('tab-audit');
+            if (auditTab && auditTab.classList.contains('active')) loadAuditLogs();
+
+            // Refresh emission tab if viewing
+            if (event.source === 'SARA') {
+                const emTab = document.getElementById('tab-emissions');
+                if (emTab && emTab.classList.contains('active')) loadEmissionData();
+            }
+        } catch (err) {
+            console.error('Feed parse error:', err);
+        }
+    });
+
+    feedEventSource.onerror = function() {
+        console.warn('Live Feed SSE disconnected — reconnecting in 5s...');
+        setTimeout(connectLiveFeed, 5000);
+    };
+
+    loadRecentFeedEvents();
+}
+
+async function loadRecentFeedEvents() {
+    try {
+        const res = await apiFetch(API + '/api/v1/live-feed/recent');
+        if (!res.ok) return;
+        const events = await res.json();
+        if (events.length > 0) {
+            // Clear both containers
+            const ch1 = document.getElementById('ch1-feed-scroll');
+            const ch2 = document.getElementById('ch2-feed-scroll');
+            if (ch1) ch1.innerHTML = '';
+            if (ch2) ch2.innerHTML = '';
+            events.slice(-20).forEach(ev => appendFeedEvent(ev, false));
+        }
+    } catch (e) {
+        console.warn('Recent feed load failed:', e);
+    }
+}
+
+const seenFeedEventIds = new Set();
+
+function appendFeedEvent(event, animate = true) {
+    // Deduplicate
+    if (event.id && seenFeedEventIds.has(event.id)) return;
+    if (event.id) seenFeedEventIds.add(event.id);
+
+    // Route to correct container: SARA/EMISSION → Ch2, everything else → Ch1
+    const isCh2 = (event.source === 'SARA' || event.type === 'EMISSION');
+    const containerId = isCh2 ? 'ch2-feed-scroll' : 'ch1-feed-scroll';
+    const scrollContainer = document.getElementById(containerId);
+    if (!scrollContainer) return;
+
+    // Clear placeholder
+    if (scrollContainer.querySelector('div[style*="text-align:center"]')) {
+        scrollContainer.innerHTML = '';
+    }
+
+    const sourceClass = {
+        'SAP_ODATA': 'feed-source-sap_odata',
+        'SARA': 'feed-source-sara',
+        'MISSION': 'feed-source-mission',
+        'SYSTEM': 'feed-source-system'
+    }[event.source] || 'feed-source-system';
+
+    const time = event.timestamp ? new Date(event.timestamp).toLocaleTimeString() : '';
+
+    let badge = '';
+    if (event.gatePassed === true) badge = '<span class="feed-badge feed-badge-pass">GATE PASSED</span>';
+    else if (event.gatePassed === false) badge = '<span class="feed-badge feed-badge-reject">REJECTED</span>';
+    if (event.classification === 'FUGITIVE_EMISSION') badge += '<span class="feed-badge feed-badge-fugitive">FUGITIVE</span>';
+    if (event.cacheHit) badge += '<span class="feed-badge" style="background:rgba(139,92,246,0.2);color:var(--accent-purple);">CACHE HIT</span>';
+
+    const div = document.createElement('div');
+    div.className = 'feed-event';
+    if (!animate) div.style.animation = 'none';
+    div.innerHTML = `
+        <span class="feed-source ${sourceClass}">${event.source}</span>
+        <span class="feed-time">${time}</span>
+        <span class="feed-text">${event.title || event.detail || ''}${badge}</span>
+    `;
+
+    scrollContainer.insertBefore(div, scrollContainer.firstChild);
+    while (scrollContainer.children.length > 20) {
+        scrollContainer.removeChild(scrollContainer.lastChild);
+    }
+}
+
+// Ch1 pause/resume
+async function toggleCh1Pause() {
+    const btn = document.getElementById('ch1-pause-btn');
+    const dot = document.getElementById('ch1-feed-dot');
+    try {
+        if (!ch1Paused) {
+            await apiFetch(API + '/api/v1/live-feed/ch1/pause?minutes=20', { method: 'POST' });
+            ch1Paused = true;
+            btn.textContent = 'Resume';
+            btn.className = 'feed-btn feed-btn-resume';
+            dot.className = 'paused-dot';
+        } else {
+            await apiFetch(API + '/api/v1/live-feed/ch1/resume', { method: 'POST' });
+            ch1Paused = false;
+            btn.textContent = 'Pause';
+            btn.className = 'feed-btn feed-btn-pause';
+            dot.className = 'pulse-dot';
+        }
+    } catch (e) { console.error('Ch1 toggle failed:', e); }
+}
+
+// Ch2 pause/resume
+async function toggleCh2Pause() {
+    const btn = document.getElementById('ch2-pause-btn');
+    const dot = document.getElementById('ch2-feed-dot');
+    try {
+        if (!ch2Paused) {
+            await apiFetch(API + '/api/v1/live-feed/ch2/pause?minutes=20', { method: 'POST' });
+            ch2Paused = true;
+            btn.textContent = 'Resume';
+            btn.className = 'feed-btn feed-btn-resume';
+            dot.className = 'paused-dot';
+        } else {
+            await apiFetch(API + '/api/v1/live-feed/ch2/resume', { method: 'POST' });
+            ch2Paused = false;
+            btn.textContent = 'Pause';
+            btn.className = 'feed-btn feed-btn-pause';
+            dot.className = 'pulse-dot';
+        }
+    } catch (e) { console.error('Ch2 toggle failed:', e); }
+}
+
+// Legacy compatibility
+async function toggleFeedPause() {
+    // Toggle both
+    await toggleCh1Pause();
+    await toggleCh2Pause();
+}
+
+// ── Nuclear Demo Reset ─────────────────────────────────────────
+async function resetAllDemo() {
+    if (!confirm('RESET ALL DEMO DATA?\n\nThis will clear:\n- All audit logs & classifications\n- All exception inbox items\n- All emission events\n- SAP sync queue\n- Experience Bank cache\n- SARA robot missions\n\nBoth schedulers (SAP OData + SARA) will restart from scenario 1.')) return;
+    try {
+        const res = await fetch(API + '/api/v1/demo/reset', { method: 'POST' });
+        const data = await res.json();
+        // Clear UI feed containers
+        const ch1 = document.getElementById('ch1-feed-scroll');
+        const ch2 = document.getElementById('ch2-feed-scroll');
+        if (ch1) ch1.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;font-size:12px;">Demo reset — waiting for new events...</div>';
+        if (ch2) ch2.innerHTML = '<div style="text-align:center;color:var(--text-secondary);padding:20px;font-size:12px;">Demo reset — waiting for new events...</div>';
+        // Reset pause states
+        ch1Paused = false; ch2Paused = false;
+        const ch1Btn = document.getElementById('ch1-pause-btn');
+        const ch2Btn = document.getElementById('ch2-pause-btn');
+        if (ch1Btn) { ch1Btn.textContent = 'Pause'; ch1Btn.className = 'feed-btn feed-btn-pause'; }
+        if (ch2Btn) { ch2Btn.textContent = 'Pause'; ch2Btn.className = 'feed-btn feed-btn-pause'; }
+        const ch1Dot = document.getElementById('ch1-feed-dot');
+        const ch2Dot = document.getElementById('ch2-feed-dot');
+        if (ch1Dot) ch1Dot.className = 'pulse-dot';
+        if (ch2Dot) ch2Dot.className = 'pulse-dot';
+        // Refresh all dashboard data
+        loadTopKpis();
+        loadExceptionInbox();
+        loadEmissionInbox();
+        loadInboxBadge();
+        console.log('Demo reset complete:', data);
+        alert('Demo reset complete!\n\n' + data.totalRecordsCleared + ' records cleared in ' + data.durationMs + 'ms.\nBoth schedulers restarted.');
+    } catch (e) {
+        console.error('Demo reset failed:', e);
+        alert('Reset failed: ' + e.message);
+    }
+}
 
 // ── Init ────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+    // Initialize user session from login
+    initUserSession();
+
+    // Connect to Live Feed SSE
+    connectLiveFeed();
+
     // Load assets first (needed by other views), then everything else in parallel
     await loadAssets();
     Promise.allSettled([
@@ -1643,7 +2121,7 @@ async function submitPipelineTest() {
         resultDiv.className = `pipeline-result ${resultClass}`;
         resultDiv.innerHTML = `
 <span style="font-size:16px;font-weight:700;color:${passed?'var(--accent-green)':'var(--accent-red)'};">
-${passed ? '&#9989; REFLECTOR GATE: PASSED — Written to SAP' : '&#128721; REFLECTOR GATE: REJECTED — Flagged for Human Review'}
+${passed ? '&#9989; REFLECTOR GATE: PASSED — Written to SAP via OData' : '&#128721; REFLECTOR GATE: REJECTED — Flagged for Human Review'}
 </span>
 
 <span style="color:var(--text-secondary);">Notification:</span>  ${data.notificationNumber}
@@ -1852,6 +2330,147 @@ async function loadExceptionInbox() {
     }
 }
 
+// ── Emission Exception Inbox (Ch2) ──────────────────────────────
+async function loadEmissionInbox() {
+    try {
+        const res = await apiFetch(API + '/api/v1/emissions');
+        if (!res.ok) return;
+        const allEvents = await res.json();
+
+        // Rejected emissions = gatePassed === false
+        const rejected = allEvents.filter(e => e.gatePassed === false);
+        const confirmed = allEvents.filter(e => e.reviewStatus === 'CONFIRMED');
+        const reclassified = allEvents.filter(e => e.reviewStatus === 'RECLASSIFIED');
+        const dismissed = allEvents.filter(e => e.reviewStatus === 'DISMISSED');
+        const pending = rejected.filter(e => e.reviewStatus === 'PENDING');
+
+        document.getElementById('em-inbox-pending').textContent = pending.length;
+        document.getElementById('em-inbox-confirmed').textContent = confirmed.length;
+        document.getElementById('em-inbox-reclassified').textContent = reclassified.length;
+        document.getElementById('em-inbox-dismissed').textContent = dismissed.length;
+
+        const container = document.getElementById('em-inbox-items');
+        if (pending.length === 0) {
+            container.innerHTML = '<div class="card" style="text-align:center;color:var(--text-secondary);padding:30px;">No pending emission exceptions. All detections either passed the Emission Reflector Gate or have been reviewed.</div>';
+            return;
+        }
+
+        container.innerHTML = pending.map(ev => {
+            const clsColors = {
+                'FUGITIVE_EMISSION': 'var(--accent-red)', 'PLANNED_VENTING': 'var(--accent-blue)',
+                'MAINTENANCE_ACTIVITY': 'var(--accent-orange)', 'SENSOR_ARTIFACT': 'var(--accent-purple)',
+                'NORMAL_PROCESS': 'var(--accent-green)', 'UNKNOWN': 'var(--text-secondary)'
+            };
+            const clsColor = clsColors[ev.classification] || 'var(--text-secondary)';
+            return `
+            <div class="card" style="border-left:3px solid ${clsColor}; margin-bottom:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+                    <div>
+                        <span style="font-size:15px;font-weight:700;">${ev.equipmentTag}</span>
+                        <span style="margin-left:8px;font-size:12px;color:var(--text-secondary);">${ev.locationArea || ''}</span>
+                        <span style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--accent-green);">SARA: ${ev.robotId || 'Robot'}</span>
+                        <span style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;background:${clsColor}20;color:${clsColor};">${(ev.classification || 'UNKNOWN').replace(/_/g,' ')}</span>
+                    </div>
+                    <span style="font-size:11px;color:var(--text-secondary);">${ev.detectedAt ? new Date(ev.detectedAt).toLocaleString() : ''}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;margin-bottom:10px;">
+                    <div><span style="color:var(--text-secondary);">Sensor:</span> <span style="font-weight:600;">${ev.sensorModality || 'CH4'} = ${ev.rawReading} ${ev.readingUnit || 'ppm'}</span></div>
+                    <div><span style="color:var(--text-secondary);">Confidence:</span> <span style="font-weight:600;color:var(--accent-red);">${(ev.confidence * 100).toFixed(1)}%</span></div>
+                    <div><span style="color:var(--text-secondary);">Corroborating:</span> <span style="font-weight:600;">${ev.corroboratingSensors || 1} sensors</span></div>
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
+                    <span style="color:var(--accent-red);font-weight:600;">Gate Rejected:</span> ${ev.gateReasoning || 'Below confidence threshold'}
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+                    <span style="color:var(--accent-purple);font-weight:600;">AI Reasoning:</span> ${ev.reasoning || 'N/A'}
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="showEmissionReviewModal('${ev.id}','confirm')" class="btn" style="background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.4);padding:6px 16px;font-size:12px;cursor:pointer;border-radius:6px;">Confirm</button>
+                    <button onclick="showEmissionReviewModal('${ev.id}','reclassify')" class="btn" style="background:rgba(59,130,246,0.15);color:var(--accent-blue);border:1px solid rgba(59,130,246,0.4);padding:6px 16px;font-size:12px;cursor:pointer;border-radius:6px;">Reclassify</button>
+                    <button onclick="showEmissionReviewModal('${ev.id}','dismiss')" class="btn" style="background:rgba(100,116,139,0.15);color:var(--text-secondary);border:1px solid rgba(100,116,139,0.4);padding:6px 16px;font-size:12px;cursor:pointer;border-radius:6px;">Dismiss</button>
+                </div>
+            </div>`;
+        }).join('');
+    } catch(e) {
+        console.error('Emission inbox load error:', e);
+    }
+}
+
+function showEmissionReviewModal(id, action) {
+    loadEngineers().then(engineers => {
+        const eligible = Object.entries(engineers).filter(([_, role]) =>
+            role === 'SENIOR_ENGINEER' || role === 'ADMIN');
+
+        const overlay = document.createElement('div');
+        overlay.id = 'emission-review-overlay';
+        overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);z-index:1000;display:flex;align-items:center;justify-content:center;';
+
+        const actionColors = { confirm: 'var(--accent-green)', reclassify: 'var(--accent-blue)', dismiss: 'var(--text-secondary)' };
+        const color = actionColors[action] || 'var(--accent-blue)';
+        const isReclassify = action === 'reclassify';
+
+        overlay.innerHTML = `
+            <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:24px;width:440px;max-width:90vw;">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">
+                    <h3 style="color:${color};font-size:16px;text-transform:uppercase;margin:0;">${action} Emission</h3>
+                    <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.15);color:var(--accent-green);border:1px solid rgba(16,185,129,0.3);">CHALLENGE 02</span>
+                    <span style="font-size:10px;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,0.15);color:var(--accent-purple);border:1px solid rgba(139,92,246,0.3);">EU 2024/1787</span>
+                </div>
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Reviewing Engineer</label>
+                <select id="em-modal-engineer" style="width:100%;padding:10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;font-size:14px;margin-bottom:14px;">
+                    ${eligible.map(([name, role]) => '<option value="' + name + '">' + name + ' (' + role + ')</option>').join('')}
+                </select>
+                ${isReclassify ? `
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Correct Emission Classification</label>
+                <select id="em-modal-classification" style="width:100%;padding:10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;font-size:14px;margin-bottom:14px;">
+                    <option value="FUGITIVE_EMISSION">FUGITIVE_EMISSION — Unintended leak requiring remediation</option>
+                    <option value="PLANNED_VENTING">PLANNED_VENTING — Authorized operational release</option>
+                    <option value="MAINTENANCE_ACTIVITY">MAINTENANCE_ACTIVITY — Emission from active maintenance</option>
+                    <option value="SENSOR_ARTIFACT">SENSOR_ARTIFACT — False reading / environmental interference</option>
+                    <option value="NORMAL_PROCESS">NORMAL_PROCESS — Within expected operational envelope</option>
+                </select>` : ''}
+                <label style="display:block;font-size:13px;color:var(--text-secondary);margin-bottom:6px;">Review Notes (optional)</label>
+                <textarea id="em-modal-notes" rows="3" style="width:100%;padding:10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:6px;font-size:13px;resize:vertical;margin-bottom:16px;" placeholder="Engineering justification..."></textarea>
+                <div style="display:flex;gap:10px;justify-content:flex-end;">
+                    <button onclick="document.getElementById('emission-review-overlay').remove()" style="padding:8px 20px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;">Cancel</button>
+                    <button onclick="submitEmissionReview('${id}','${action}')" style="padding:8px 20px;background:${color}22;color:${color};border:1px solid ${color}66;border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Confirm ${action.charAt(0).toUpperCase() + action.slice(1)}</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    });
+}
+
+async function submitEmissionReview(id, action) {
+    const engineer = document.getElementById('em-modal-engineer').value;
+    const notes = document.getElementById('em-modal-notes').value;
+    const body = { reviewedBy: engineer, notes: notes || 'Reviewed from dashboard' };
+
+    try {
+        let endpoint = '/api/v1/emissions/' + id + '/' + action;
+        if (action === 'reclassify') {
+            body.correctedClassification = document.getElementById('em-modal-classification').value;
+            endpoint = '/api/v1/emissions/' + id + '/reclassify';
+        }
+        const res = await apiFetch(API + endpoint, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        document.getElementById('emission-review-overlay').remove();
+        if (res.ok) {
+            const result = await res.json().catch(() => ({}));
+            showAuditToast(action, result.equipmentTag || id, engineer);
+            loadEmissionInbox();
+            if (typeof loadEmissionData === 'function') loadEmissionData();
+            if (typeof loadEmissionEvents === 'function') loadEmissionEvents();
+        } else {
+            const err = await res.json().catch(() => ({}));
+            alert(err.message || action + ' failed');
+        }
+    } catch(e) { alert('Error: ' + e.message); }
+}
+
 // ── Engineer Selection Cache ────────────────────────────────────
 let cachedEngineers = null;
 async function loadEngineers() {
@@ -1925,9 +2544,11 @@ async function submitReview(id, action, isReclassify) {
 
     let body = { reviewedBy: engineer, notes: notes || '' };
     let endpoint = '/api/v1/exceptions/' + id + '/' + action;
+    let failureCode = '';
 
     if (isReclassify) {
-        body.failureModeCode = document.getElementById('modal-failure-code').value;
+        failureCode = document.getElementById('modal-failure-code').value;
+        body.failureModeCode = failureCode;
         endpoint = '/api/v1/exceptions/' + id + '/reclassify';
     }
 
@@ -1939,12 +2560,67 @@ async function submitReview(id, action, isReclassify) {
         });
         document.getElementById('review-modal-overlay').remove();
         if (res.ok) {
+            const result = await res.json().catch(() => ({}));
+
+            // Show Experience Bank feedback notification for reclassifications
+            if (isReclassify) {
+                showExperienceBankFeedback(result, failureCode, engineer);
+            }
+
+            // Show audit confirmation toast
+            showAuditToast(action, result.equipmentTag || id, engineer);
+
             loadExceptionInbox();
         } else {
             const err = await res.json().catch(() => ({}));
             alert(err.message || 'Action failed — check RBAC permissions.');
         }
     } catch(e) { alert('Error: ' + e.message); }
+}
+
+/** Show a visual notification that the Experience Bank has learned from the reclassification. */
+function showExperienceBankFeedback(result, failureCode, engineer) {
+    const notification = document.createElement('div');
+    notification.style.cssText = 'position:fixed;top:20px;right:20px;z-index:10000;background:linear-gradient(135deg,#1a2332,#0f172a);border:1px solid rgba(139,92,246,0.4);border-radius:12px;padding:20px 24px;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:feedSlideIn 0.4s ease-out;';
+    notification.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--accent-purple),var(--accent-blue));display:flex;align-items:center;justify-content:center;font-size:18px;">&#129504;</div>
+            <div>
+                <div style="font-size:14px;font-weight:700;color:var(--accent-purple);">Experience Bank Updated</div>
+                <div style="font-size:11px;color:var(--text-secondary);">Human expertise captured for future classifications</div>
+            </div>
+        </div>
+        <div style="background:var(--bg-primary);border-radius:8px;padding:12px;font-size:12px;line-height:1.8;">
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">Corrected Code:</span><span style="color:var(--accent-green);font-weight:700;">${failureCode}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">Reviewed By:</span><span>${engineer}</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">Semantic Cache:</span><span style="color:var(--accent-green);">Updated — similar notes will auto-classify</span></div>
+            <div style="display:flex;justify-content:space-between;"><span style="color:var(--text-secondary);">Audit Entry:</span><span style="color:var(--accent-blue);">Immutable record created</span></div>
+        </div>
+        <div style="margin-top:10px;font-size:11px;color:var(--accent-green);font-style:italic;">
+            Next time a similar technician note arrives, the system will classify it correctly via cache — 50ms instead of 3s.
+        </div>
+    `;
+    document.body.appendChild(notification);
+    setTimeout(() => { notification.style.opacity = '0'; notification.style.transition = 'opacity 0.5s'; setTimeout(() => notification.remove(), 500); }, 8000);
+}
+
+/** Show a toast confirming the audit trail entry was created. */
+function showAuditToast(action, equipmentTag, engineer) {
+    const actionLabels = { approve: 'Approved', reclassify: 'Reclassified', dismiss: 'Dismissed' };
+    const actionColors = { approve: 'var(--accent-green)', reclassify: 'var(--accent-blue)', dismiss: 'var(--text-secondary)' };
+
+    const toast = document.createElement('div');
+    toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:10000;background:var(--bg-card);border:1px solid var(--border);border-radius:10px;padding:14px 20px;box-shadow:0 8px 30px rgba(0,0,0,0.4);animation:feedSlideIn 0.3s ease-out;display:flex;align-items:center;gap:10px;';
+    toast.innerHTML = `
+        <div style="width:8px;height:8px;border-radius:50%;background:${actionColors[action] || 'var(--accent-blue)'};"></div>
+        <div style="font-size:12px;">
+            <span style="color:${actionColors[action] || 'var(--accent-blue)'};font-weight:700;">${actionLabels[action] || action}</span>
+            <span style="color:var(--text-secondary);"> — ${equipmentTag || 'event'} by ${engineer}</span>
+            <span style="color:var(--text-secondary);font-size:10px;margin-left:8px;">Audit log entry created</span>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.4s'; setTimeout(() => toast.remove(), 400); }, 5000);
 }
 
 function reviewException(id, action) {
@@ -1961,12 +2637,12 @@ function switchTab(name) {
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
     document.getElementById('tab-' + name).classList.add('active');
     event.target.classList.add('active');
-    if (name === 'inbox') loadExceptionInbox();
+    if (name === 'inbox') { loadExceptionInbox(); loadEmissionInbox(); }
     if (name === 'resilience') loadResilienceData();
     if (name === 'emissions') loadEmissionData();
     if (name === 'missions') loadMissionData();
     if (name === 'audit') loadAuditLogs();
-    if (name === 'analytics') loadAnalytics();
+    if (name === 'analytics') { loadAnalytics(); loadFacilityRisk(); }
     if (name === 'health') loadHealthData();
 }
 
@@ -2004,11 +2680,16 @@ async function loadAuditLogs() {
                         <span style="margin-left:8px;font-size:12px;color:var(--text-secondary);">${log.equipmentTag}</span>
                     </div>
                     <div style="display:flex;gap:8px;align-items:center;">
+                        ${log.modelName === 'HUMAN_REVIEW' ? `
+                        <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;
+                            background:rgba(59,130,246,0.15);color:var(--accent-blue);">
+                            ${log.gateReasoning?.includes('APPROVE') ? 'HUMAN APPROVED' : log.gateReasoning?.includes('RECLASSIFY') ? 'HUMAN RECLASSIFIED' : 'HUMAN DISMISSED'}
+                        </span>` : `
                         <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;
                             background:${log.gatePassed ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)'};
                             color:${log.gatePassed ? 'var(--accent-green)' : 'var(--accent-red)'};">
                             ${log.gatePassed ? 'PASSED' : 'REJECTED'}
-                        </span>
+                        </span>`}
                         ${log.writtenToSap ? '<span style="font-size:11px;padding:2px 8px;border-radius:4px;background:rgba(59,130,246,0.15);color:var(--accent-blue);font-weight:600;">SAP WRITTEN</span>' : ''}
                     </div>
                 </div>
@@ -2019,9 +2700,14 @@ async function loadAuditLogs() {
                     <div><span style="color:var(--text-secondary);">Latency:</span> <span style="font-weight:600;">${log.totalPipelineLatencyMs}ms</span></div>
                     <div><span style="color:var(--text-secondary);">Model:</span> <span style="font-weight:600;">${log.modelName}</span></div>
                 </div>
+                ${log.modelName === 'HUMAN_REVIEW' ? `
+                <div style="margin-top:8px;padding:8px 12px;background:rgba(59,130,246,0.08);border-radius:6px;border-left:3px solid var(--accent-blue);font-size:12px;">
+                    <span style="font-weight:700;color:var(--accent-blue);">Reviewed by:</span>
+                    <span style="font-weight:600;color:var(--text-primary);margin-left:4px;">${log.gateReasoning ? log.gateReasoning.match(/by ([^.]+)/)?.[1] || 'Engineer' : 'Engineer'}</span>
+                    <span style="margin-left:12px;color:var(--text-secondary);">${log.gateReasoning || ''}</span>
+                </div>` : ''}
                 <div style="margin-top:6px;font-size:11px;color:var(--text-secondary);">
-                    <span>JSON valid 1st: ${log.jsonValidFirstAttempt ? 'Yes' : 'No'}</span> |
-                    <span>LLM attempts: ${log.llmAttempts}</span> |
+                    ${log.modelName === 'HUMAN_REVIEW' ? '' : `<span>JSON valid 1st: ${log.jsonValidFirstAttempt ? 'Yes' : 'No'}</span> | <span>LLM attempts: ${log.llmAttempts}</span> | `}
                     <span>Demo: ${log.demoMode ? 'Yes' : 'No'}</span> |
                     <span>${new Date(log.createdAt).toLocaleString()}</span>
                 </div>
@@ -2088,6 +2774,59 @@ async function loadAnalytics() {
         `;
     } catch(e) {
         console.error('Analytics load error:', e);
+    }
+}
+
+// ── Facility Risk Assessment ────────────────────────────────────
+async function loadFacilityRisk() {
+    try {
+        const res = await apiFetch(API + '/api/v1/analytics/facility-risk');
+        const risk = await res.json();
+
+        // Risk Score with color coding
+        const scoreEl = document.getElementById('risk-score');
+        const scoreCard = document.getElementById('risk-score-card');
+        scoreEl.textContent = risk.facilityRiskLevel;
+        const riskColors = {
+            'CRITICAL': 'var(--accent-red)',
+            'ELEVATED': 'var(--accent-orange)',
+            'MODERATE': 'var(--accent-blue)',
+            'LOW': 'var(--accent-green)'
+        };
+        const riskColor = riskColors[risk.facilityRiskLevel] || 'var(--accent-blue)';
+        scoreEl.style.color = riskColor;
+        scoreCard.style.borderTop = '3px solid ' + riskColor;
+
+        // KPI cards
+        document.getElementById('risk-aging').textContent = risk.agingAssets;
+        document.getElementById('risk-critical').textContent = risk.criticalAgingAssets;
+        document.getElementById('risk-avg-rul').textContent = risk.avgRulYears + 'y';
+
+        // Asset Risk Breakdown (top 6)
+        const topAssets = risk.assetRiskBreakdown.slice(0, 6);
+        const tierColors = { 'CRITICAL': 'var(--accent-red)', 'HIGH': 'var(--accent-orange)', 'MEDIUM': 'var(--accent-blue)', 'LOW': 'var(--accent-green)' };
+        document.getElementById('risk-asset-breakdown').innerHTML = topAssets.map(a => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+                <div>
+                    <strong style="color:var(--text-primary);">${a.equipmentTag}</strong>
+                    <span style="color:var(--text-secondary);font-size:11px;margin-left:6px;">${a.assetName}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;">
+                    <span style="font-size:11px;color:var(--text-secondary);">${a.lifeConsumedPct}% life · RUL ${a.rulYears}y</span>
+                    <span style="font-size:10px;padding:2px 8px;border-radius:8px;font-weight:700;background:${tierColors[a.riskTier]}22;color:${tierColors[a.riskTier]};">${a.riskTier}</span>
+                </div>
+            </div>
+        `).join('');
+
+        // Exception Risk Summary
+        document.getElementById('risk-exception-summary').innerHTML = `
+            <div>Pending Exceptions: <strong style="color:var(--accent-orange);">${risk.pendingExceptions}</strong></div>
+            <div>Critical Priority: <strong style="color:var(--accent-red);">${risk.criticalExceptions}</strong></div>
+            <div>High Priority: <strong style="color:var(--accent-orange);">${risk.highExceptions}</strong></div>
+            <div>Composite Risk Score: <strong style="color:${riskColor};font-size:16px;">${risk.facilityRiskScore}</strong> <span style="font-size:11px;color:var(--text-secondary);">/ 100</span></div>
+        `;
+    } catch(e) {
+        console.error('Facility risk load error:', e);
     }
 }
 
@@ -2168,7 +2907,8 @@ let emissionHistory = [];
 async function loadEmissionData() {
     await Promise.all([
         loadEmissionStats(),
-        loadEmissionEvents()
+        loadEmissionEvents(),
+        loadEmissionTrendChart()
     ]);
 }
 
@@ -2241,6 +2981,102 @@ async function loadEmissionStats() {
     }
 }
 
+async function loadEmissionTrendChart() {
+    const chartContainer = document.getElementById('em-trend-chart');
+    const legendContainer = document.getElementById('em-trend-legend');
+    try {
+        const res = await apiFetch(API + '/api/v1/emissions/timeline');
+        const data = await res.json();
+        const days = data.days || {};
+        const dayKeys = Object.keys(days);
+
+        if (dayKeys.length === 0) {
+            chartContainer.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;text-align:center;padding-top:80px;">No emission data yet. Ingest sensor readings to see trends.</div>';
+            legendContainer.innerHTML = '';
+            return;
+        }
+
+        const classColors = {
+            'FUGITIVE_EMISSION': '#ef4444',
+            'PLANNED_VENTING': '#3b82f6',
+            'MAINTENANCE_ACTIVITY': '#f59e0b',
+            'SENSOR_ARTIFACT': '#8b5cf6',
+            'NORMAL_PROCESS': '#10b981',
+            'UNKNOWN': '#6b7280'
+        };
+        const classLabels = {
+            'FUGITIVE_EMISSION': 'Fugitive',
+            'PLANNED_VENTING': 'Venting',
+            'MAINTENANCE_ACTIVITY': 'Maintenance',
+            'SENSOR_ARTIFACT': 'Artifact',
+            'NORMAL_PROCESS': 'Normal',
+            'UNKNOWN': 'Unknown'
+        };
+
+        // Find all classification types present
+        const allClasses = new Set();
+        dayKeys.forEach(d => Object.keys(days[d]).forEach(c => allClasses.add(c)));
+        const classArray = [...allClasses];
+
+        // Find max stacked total for scaling
+        let maxTotal = 0;
+        dayKeys.forEach(d => {
+            let total = 0;
+            classArray.forEach(c => { total += (days[d][c] || 0); });
+            if (total > maxTotal) maxTotal = total;
+        });
+        if (maxTotal === 0) maxTotal = 1;
+
+        const chartHeight = 170;
+        const barWidth = Math.min(60, Math.floor((chartContainer.clientWidth - 60) / Math.max(dayKeys.length, 1)) - 8);
+
+        // Build stacked bar chart using pure HTML/CSS
+        let barsHtml = '<div style="display:flex;align-items:flex-end;justify-content:center;gap:6px;height:' + chartHeight + 'px;padding:0 24px;">';
+
+        dayKeys.forEach(day => {
+            const dayLabel = day.substring(5); // MM-DD
+            let stackHtml = '';
+            let dayTotal = 0;
+            classArray.forEach(cls => {
+                const count = days[day][cls] || 0;
+                dayTotal += count;
+                if (count > 0) {
+                    const segHeight = Math.max(4, Math.round((count / maxTotal) * (chartHeight - 30)));
+                    stackHtml += `<div title="${classLabels[cls] || cls}: ${count}" style="width:${barWidth}px;height:${segHeight}px;background:${classColors[cls] || '#6b7280'};border-radius:2px;transition:all 0.3s;cursor:pointer;" onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'"></div>`;
+                }
+            });
+
+            barsHtml += `<div style="display:flex;flex-direction:column;align-items:center;gap:1px;">
+                <div style="font-size:11px;font-weight:600;color:var(--text-primary);margin-bottom:2px;">${dayTotal}</div>
+                <div style="display:flex;flex-direction:column-reverse;gap:1px;">${stackHtml}</div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-top:4px;">${dayLabel}</div>
+            </div>`;
+        });
+
+        barsHtml += '</div>';
+
+        // Y-axis label
+        barsHtml = `<div style="position:absolute;left:0;top:0;bottom:20px;width:24px;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding-right:4px;">
+            <span style="font-size:10px;color:var(--text-secondary);">${maxTotal}</span>
+            <span style="font-size:10px;color:var(--text-secondary);">0</span>
+        </div>` + barsHtml;
+
+        chartContainer.innerHTML = barsHtml;
+
+        // Legend
+        legendContainer.innerHTML = classArray.map(cls =>
+            `<div style="display:flex;align-items:center;gap:5px;font-size:11px;">
+                <div style="width:10px;height:10px;border-radius:2px;background:${classColors[cls] || '#6b7280'};"></div>
+                <span style="color:var(--text-secondary);">${classLabels[cls] || cls}</span>
+            </div>`
+        ).join('');
+
+    } catch(e) {
+        console.error('Emission trend chart error:', e);
+        chartContainer.innerHTML = '<div style="color:var(--text-secondary);font-size:13px;text-align:center;padding-top:80px;">Failed to load trend data.</div>';
+    }
+}
+
 async function loadEmissionEvents() {
     try {
         const filter = document.getElementById('em-filter').value;
@@ -2280,7 +3116,7 @@ async function loadEmissionEvents() {
                     <div>
                         <span style="font-weight:700;font-size:15px;">${ev.equipmentTag}</span>
                         <span style="margin-left:8px;font-size:12px;color:var(--text-secondary);">${ev.locationArea || ''}</span>
-                        <span style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(59,130,246,0.1);color:var(--accent-blue);">${ev.robotId || 'robot'}</span>
+                        <span style="margin-left:8px;font-size:11px;padding:2px 8px;border-radius:10px;background:rgba(16,185,129,0.1);color:var(--accent-green);">SARA: ${ev.robotId || 'robot'}</span>
                     </div>
                     <div style="display:flex;gap:6px;align-items:center;">
                         <span style="font-size:11px;padding:2px 8px;border-radius:4px;font-weight:600;background:${clsColor}20;color:${clsColor};">${(ev.classification || 'UNKNOWN').replace(/_/g,' ')}</span>
@@ -2297,14 +3133,22 @@ async function loadEmissionEvents() {
                     <div><span style="color:var(--text-secondary);">Leak Rate:</span> <strong>${ev.estimatedLeakRateKgHr ? ev.estimatedLeakRateKgHr.toFixed(2) + ' kg/hr' : 'N/A'}</strong></div>
                 </div>
                 ${ev.reasoning ? `<div style="margin-top:8px;font-size:12px;color:var(--text-secondary);font-style:italic;line-height:1.5;">${(ev.reasoning || '').substring(0, 200)}${(ev.reasoning || '').length > 200 ? '...' : ''}</div>` : ''}
+                ${ev.remediationAction ? `<div style="margin-top:8px;padding:8px 10px;background:rgba(245,158,11,0.08);border-left:3px solid var(--accent-orange);border-radius:4px;">
+                    <div style="font-size:11px;font-weight:700;color:var(--accent-orange);margin-bottom:4px;">REMEDIATION: <span style="color:${ev.remediationUrgency === 'IMMEDIATE' ? 'var(--accent-red)' : ev.remediationUrgency === 'WITHIN_24H' ? 'var(--accent-orange)' : 'var(--accent-green)'};">${ev.remediationUrgency || ''}</span>${ev.remediationEstimatedHours ? ' (est. ' + ev.remediationEstimatedHours + 'h)' : ''}</div>
+                    <div style="font-size:12px;color:var(--text-primary);line-height:1.5;">${(ev.remediationAction || '').substring(0, 250)}${(ev.remediationAction || '').length > 250 ? '...' : ''}</div>
+                </div>` : ''}
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
                     <div style="font-size:11px;color:var(--text-secondary);">
                         ${ev.sapWorkOrderNumber ? '<span style="color:var(--accent-blue);font-weight:600;">WO: ' + ev.sapWorkOrderNumber + '</span> | ' : ''}
                         Mission: ${ev.missionId || 'N/A'} | Compliance: ${ev.complianceStatus || 'N/A'} | ${ev.detectedAt ? new Date(ev.detectedAt).toLocaleString() : ''}
                     </div>
                     <div style="display:flex;gap:6px;">
-                        <button class="btn" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:3px 10px;font-size:11px;" onclick="confirmEmission('${ev.id}')">Confirm</button>
-                        <button class="btn" style="background:var(--bg-primary);color:var(--text-secondary);border:1px solid var(--border);padding:3px 10px;font-size:11px;" onclick="dismissEmission('${ev.id}')">Dismiss</button>
+                        ${ev.reviewStatus === 'CONFIRMED' ? '<span style="font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(16,185,129,0.15);color:var(--accent-green);font-weight:600;">&#10003; Confirmed</span>'
+                          : ev.reviewStatus === 'DISMISSED' ? '<span style="font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(107,114,128,0.15);color:var(--text-secondary);font-weight:600;">Dismissed</span>'
+                          : ev.reviewStatus === 'RECLASSIFIED' ? '<span style="font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(139,92,246,0.15);color:var(--accent-purple);font-weight:600;">Reclassified</span>'
+                          : `<button class="btn" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:3px 10px;font-size:11px;" onclick="showEmissionReviewModal('${ev.id}','confirm')">Confirm</button>
+                             <button class="btn" style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:3px 10px;font-size:11px;" onclick="showEmissionReviewModal('${ev.id}','reclassify')">Reclassify</button>
+                             <button class="btn" style="background:var(--bg-primary);color:var(--text-secondary);border:1px solid var(--border);padding:3px 10px;font-size:11px;" onclick="showEmissionReviewModal('${ev.id}','dismiss')">Dismiss</button>`}
                     </div>
                 </div>
             </div>`;
@@ -2383,7 +3227,7 @@ ${passed ? '&#9989; EMISSION GATE: PASSED' : '&#128721; EMISSION GATE: REJECTED'
 
 <span style="color:var(--text-secondary);">Event ID:</span>      ${data.eventId}
 <span style="color:var(--text-secondary);">Equipment:</span>     ${data.equipmentTag} (${data.locationArea})
-<span style="color:var(--text-secondary);">Robot:</span>         ${data.robotId} | Mission: ${data.missionId}
+<span style="color:var(--text-secondary);">SARA Robot:</span>    ${data.robotId} | Mission: ${data.missionId}
 <span style="color:var(--text-secondary);">Sensor:</span>        ${data.sensorModality} = ${data.rawReading} ${data.readingUnit}
 
 <span style="color:${clsColor};font-weight:700;font-size:15px;">Classification: ${(data.classification || '').replace(/_/g, ' ')}</span>
@@ -2399,7 +3243,11 @@ ${passed ? '&#9989; EMISSION GATE: PASSED' : '&#128721; EMISSION GATE: REJECTED'
 <span style="color:var(--text-secondary);">Compliance:</span>    ${data.complianceStatus} ${data.complianceGenerated ? '| EU 2024/1787 Record Generated' : ''}
 ${data.workOrderNumber ? '<span style="color:var(--accent-blue);font-weight:700;">SAP Work Order: ' + data.workOrderNumber + '</span>' : ''}
 <span style="color:var(--text-secondary);">Pipeline Time:</span> ${data.totalPipelineLatencyMs}ms
-<span style="color:var(--text-secondary);">Model:</span>         ${data.modelId || 'mistral:7b'} (HM90 Sovereign Node)`;
+<span style="color:var(--text-secondary);">Model:</span>         ${data.modelId || 'mistral:7b'} (HM90 Sovereign Node)
+
+<span style="color:var(--accent-orange);font-weight:600;">Prescriptive Remediation (MITIGATE):</span>
+<span style="color:var(--text-secondary);">  Urgency:</span>      <span style="font-weight:700;color:${data.remediationUrgency === 'IMMEDIATE' ? 'var(--accent-red)' : data.remediationUrgency === 'WITHIN_24H' ? 'var(--accent-orange)' : 'var(--accent-green)'};">${data.remediationUrgency || 'N/A'}</span>${data.remediationEstimatedHours ? ' (est. ' + data.remediationEstimatedHours + 'h)' : ''}
+<span style="color:var(--text-secondary);">  Action:</span>       ${data.remediationAction || 'N/A'}`;
 
         resultDiv.classList.remove('hidden');
 
@@ -2420,7 +3268,7 @@ async function confirmEmission(id) {
         const res = await apiFetch(API + '/api/v1/emissions/' + id + '/confirm', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reviewedBy: 'lars.henriksen', notes: 'Confirmed via dashboard' })
+            body: JSON.stringify({ reviewedBy: sessionStorage.getItem('loomlink-user') || 'lars.henriksen', notes: 'Confirmed via dashboard' })
         });
         if (!res.ok) {
             const errText = await res.text();
@@ -2428,6 +3276,7 @@ async function confirmEmission(id) {
             alert('Confirm failed: ' + res.status + ' — ' + errText.substring(0, 200));
             return;
         }
+        showAuditToast('approve', 'Emission ' + id.substring(0, 8), sessionStorage.getItem('loomlink-user') || 'engineer');
         await loadEmissionEvents();
     } catch(e) { console.error('Confirm failed:', e); alert('Confirm failed: ' + e.message); }
 }
@@ -2437,7 +3286,7 @@ async function dismissEmission(id) {
         const res = await apiFetch(API + '/api/v1/emissions/' + id + '/dismiss', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ reviewedBy: 'lars.henriksen', notes: 'Dismissed via dashboard review' })
+            body: JSON.stringify({ reviewedBy: sessionStorage.getItem('loomlink-user') || 'lars.henriksen', notes: 'Dismissed via dashboard review' })
         });
         if (!res.ok) {
             const errText = await res.text();
@@ -2445,6 +3294,7 @@ async function dismissEmission(id) {
             alert('Dismiss failed: ' + res.status + ' — ' + errText.substring(0, 200));
             return;
         }
+        showAuditToast('dismiss', 'Emission ' + id.substring(0, 8), sessionStorage.getItem('loomlink-user') || 'engineer');
         await loadEmissionEvents();
     } catch(e) { console.error('Dismiss failed:', e); alert('Dismiss failed: ' + e.message); }
 }

@@ -75,6 +75,7 @@ public class EmissionPipelineOrchestrator {
     private final EmissionAnalysisService emissionAnalysisService;
     private final SapBapiGateway bapiGateway;
     private final EmissionExperienceBankService emissionExperienceBank;
+    private final EmissionRemediationService remediationService;
     private final double emissionGateThreshold;
     private final boolean demoModeEnabled;
 
@@ -84,6 +85,7 @@ public class EmissionPipelineOrchestrator {
             EmissionAnalysisService emissionAnalysisService,
             SapBapiGateway bapiGateway,
             EmissionExperienceBankService emissionExperienceBank,
+            EmissionRemediationService remediationService,
             @Value("${loomlink.emission.gate-threshold:0.80}") double emissionGateThreshold,
             @Value("${loomlink.demo-mode.enabled:false}") boolean demoModeEnabled) {
 
@@ -92,6 +94,7 @@ public class EmissionPipelineOrchestrator {
         this.emissionAnalysisService = emissionAnalysisService;
         this.bapiGateway = bapiGateway;
         this.emissionExperienceBank = emissionExperienceBank;
+        this.remediationService = remediationService;
         this.emissionGateThreshold = emissionGateThreshold;
         this.demoModeEnabled = demoModeEnabled;
     }
@@ -170,13 +173,30 @@ public class EmissionPipelineOrchestrator {
         log.info("  Emission Reflector Gate: {} (threshold: {:.2f})",
                  gatePassed ? "PASSED" : "REJECTED", emissionGateThreshold);
 
+        // ── Stage 6b: Exception Inbox Routing (for rejected events) ─────
+        // (Scenario 3 fix) Rejected emission events must not silently disappear.
+        // EU 2024/1787 requires documented response for ALL detected leaks.
+        // Route to human review queue with priority based on equipment criticality.
+        if (!gatePassed) {
+            event.routeToExceptionInbox(emissionGateThreshold);
+            log.info("  Exception Inbox: ROUTED — priority {} (review status: GATE_REJECTED)",
+                     event.getReviewPriority());
+        }
+
         // ── Stage 7: Trend Tracking ─────────────────────────────────────
         String trendDirection = detectTrend(event);
         event.enrichWithTrendData(event.getPreviousDetections7d(), trendDirection);
         log.info("  Trend Analysis: {} ({} detections in last 7 days)",
                  trendDirection, event.getPreviousDetections7d());
 
-        // ── Stage 8: Compliance Actions ─────────────────────────────────
+        // ── Stage 8: Prescriptive Remediation ───────────────────────────
+        EmissionRemediationService.RemediationResult remediation = remediationService.recommend(event);
+        event.applyRemediation(remediation.action(), remediation.urgency(), remediation.estimatedHours());
+        log.info("  Remediation: {} | Action: {}",
+                 remediation.urgency(),
+                 remediation.action().substring(0, Math.min(80, remediation.action().length())) + "...");
+
+        // ── Stage 9: Compliance Actions ─────────────────────────────────
         String workOrderNumber = null;
         boolean complianceGenerated = false;
 
@@ -217,7 +237,10 @@ public class EmissionPipelineOrchestrator {
                 totalLatency,
                 trendDirection,
                 complianceGenerated,
-                workOrderNumber);
+                workOrderNumber,
+                remediation.action(),
+                remediation.urgency(),
+                remediation.estimatedHours());
     }
 
     /**
@@ -269,31 +292,49 @@ public class EmissionPipelineOrchestrator {
      * For demo, we simulate based on primary reading magnitude.</p>
      */
     private void enrichMultiModalData(EmissionEvent event) {
-        // Demo: if primary reading is high, simulate corroborating thermal/acoustic
+        // Wind-adjusted multi-modal fusion thresholds (Scenario 1 fix)
+        // High wind disperses gas plume before reaching sensor — a real 800 ppm leak
+        // at source may read only 180 ppm at the robot in 30 km/h wind.
+        // Lower the corroboration thresholds proportionally to wind speed so we don't
+        // dismiss wind-diluted real leaks as single-sensor events.
+        double windSpeedKmh = event.getWindSpeedKmh() != null ? event.getWindSpeedKmh() : 0.0;
+        double windDilutionFactor = Math.max(1.0, 1.0 + (windSpeedKmh / 20.0));
+        // At 0 km/h: factor=1.0, thresholds unchanged (500/200 ppm)
+        // At 20 km/h: factor=2.0, thresholds halved (250/100 ppm)
+        // At 40 km/h: factor=3.0, thresholds divided by 3 (167/67 ppm)
+        double highThreshold = 500.0 / windDilutionFactor;
+        double moderateThreshold = 200.0 / windDilutionFactor;
+
         int corroboratingSensors = 1;
         Double thermal = null;
         Double thermalDelta = null;
         Double acoustic = null;
         Boolean acousticLeakSig = null;
 
-        if (event.getRawReading() > 500) {  // High gas reading
+        if (event.getRawReading() > highThreshold) {
             thermal = 45.0;  // Simulated elevated temperature
             thermalDelta = 15.0;  // 15 degrees above ambient
             acoustic = 85.0;  // High acoustic reading (dB)
             acousticLeakSig = true;  // High-frequency hiss signature
             corroboratingSensors = 3;
 
-            log.info("  Multi-Modal Fusion: HIGH-CONFIDENCE corroboration (3 sensors)");
-        } else if (event.getRawReading() > 200) {
+            log.info("  Multi-Modal Fusion: HIGH-CONFIDENCE corroboration (3 sensors) " +
+                     "[wind-adjusted threshold: {:.0f} ppm, wind: {:.0f} km/h]",
+                     highThreshold, windSpeedKmh);
+        } else if (event.getRawReading() > moderateThreshold) {
             thermal = 35.0;
             thermalDelta = 5.0;
             acoustic = 75.0;
             acousticLeakSig = false;
             corroboratingSensors = 2;
 
-            log.info("  Multi-Modal Fusion: MODERATE corroboration (2 sensors)");
+            log.info("  Multi-Modal Fusion: MODERATE corroboration (2 sensors) " +
+                     "[wind-adjusted threshold: {:.0f} ppm, wind: {:.0f} km/h]",
+                     moderateThreshold, windSpeedKmh);
         } else {
-            log.info("  Multi-Modal Fusion: PRIMARY sensor only");
+            log.info("  Multi-Modal Fusion: PRIMARY sensor only " +
+                     "[reading {:.0f} ppm below wind-adjusted threshold {:.0f} ppm]",
+                     event.getRawReading(), moderateThreshold);
         }
 
         if (thermal != null) {
@@ -319,23 +360,70 @@ public class EmissionPipelineOrchestrator {
             return 0.0;
         }
 
-        // Demo: use raw reading and equipment type to estimate leak rate
         double basePpm = event.getRawReading();
         double windFactor = event.getWindSpeedKmh() != null ?
-                (event.getWindSpeedKmh() + 1.0) / 5.0 : 1.0;  // Normalize to wind speed
+                (event.getWindSpeedKmh() + 1.0) / 5.0 : 1.0;
 
-        double leakRateKgHr;
-        if (event.getEquipmentTag().startsWith("VLV")) {
-            leakRateKgHr = (basePpm / 100.0) * 0.5 * windFactor;  // Valve: small leak
-        } else if (event.getEquipmentTag().startsWith("FLG")) {
-            leakRateKgHr = (basePpm / 100.0) * 1.2 * windFactor;  // Flange: medium leak
-        } else if (event.getEquipmentTag().startsWith("PMP")) {
-            leakRateKgHr = (basePpm / 100.0) * 2.0 * windFactor;  // Pump seal: larger leak
+        // (Scenario 7 fix) Gas type factor based on sensor modality.
+        // Different gases have drastically different molecular weights and hazard profiles:
+        // - CH4 (methane): MW=16, LEL=50,000 ppm — high volume but lower immediate toxicity
+        // - VOC (volatile organics): MW varies 30-120, often toxic at much lower concentrations
+        //   (benzene STEL = 5 ppm, H2S IDLH = 100 ppm)
+        // The leak rate formula must account for molecular weight differences to produce
+        // meaningful kg/hr estimates for EU 2024/1787 compliance records.
+        double gasTypeFactor;
+        String gasTypeLabel;
+        if (event.getSensorModality() != null) {
+            switch (event.getSensorModality()) {
+                case CH4:
+                    gasTypeFactor = 1.0;   // Baseline: methane (MW 16)
+                    gasTypeLabel = "CH4 (methane)";
+                    break;
+                case VOC:
+                    gasTypeFactor = 3.5;   // VOCs are heavier (avg MW ~60) and more hazardous
+                    gasTypeLabel = "VOC (mixed organics)";
+                    break;
+                case THERMAL:
+                    gasTypeFactor = 1.0;   // Thermal-only detection: assume methane-equivalent
+                    gasTypeLabel = "THERMAL (gas type unknown, assuming CH4)";
+                    break;
+                case ACOUSTIC:
+                    gasTypeFactor = 1.0;   // Acoustic-only: assume methane-equivalent
+                    gasTypeLabel = "ACOUSTIC (gas type unknown, assuming CH4)";
+                    break;
+                default:
+                    gasTypeFactor = 1.5;   // Multi-modal or unknown: conservative estimate
+                    gasTypeLabel = "MULTI/UNKNOWN (conservative)";
+                    break;
+            }
         } else {
-            leakRateKgHr = (basePpm / 100.0) * windFactor;  // Generic
+            gasTypeFactor = 1.5;
+            gasTypeLabel = "UNSPECIFIED (conservative)";
         }
 
-        return Math.max(0.01, leakRateKgHr);  // Minimum 0.01 kg/hr
+        // Equipment type factor
+        double equipFactor;
+        String tag = event.getEquipmentTag() != null ? event.getEquipmentTag().toUpperCase() : "";
+        if (tag.startsWith("VLV")) {
+            equipFactor = 0.5;   // Valve: typically small stem packing leaks
+        } else if (tag.startsWith("FLG")) {
+            equipFactor = 1.2;   // Flange: gasket failure can be substantial
+        } else if (tag.startsWith("PMP")) {
+            equipFactor = 2.0;   // Pump seal: larger leak potential
+        } else if (tag.startsWith("CMP")) {
+            equipFactor = 2.5;   // Compressor: high-pressure systems
+        } else if (tag.startsWith("PRV") || tag.startsWith("PSV")) {
+            equipFactor = 3.0;   // Safety valves: full-bore relief possible
+        } else {
+            equipFactor = 1.0;   // Generic
+        }
+
+        double leakRateKgHr = (basePpm / 100.0) * equipFactor * windFactor * gasTypeFactor;
+
+        log.info("  Leak Quantification: {:.3f} kg/hr [gas: {}, equipFactor: {}, windFactor: {:.2f}]",
+                leakRateKgHr, gasTypeLabel, equipFactor, windFactor);
+
+        return Math.max(0.01, leakRateKgHr);
     }
 
     /**
@@ -352,19 +440,41 @@ public class EmissionPipelineOrchestrator {
     private boolean evaluateEmissionGate(EmissionEvent event, EmissionClassification classification) {
         double confidence = event.getConfidence();
 
-        // Base rule: must meet gate threshold
+        // ── Rule 1: UNKNOWN never auto-passes — always needs human review ──
+        if (classification == EmissionClassification.UNKNOWN) {
+            log.info("  Emission Gate: REJECTED — UNKNOWN classification always requires human review");
+            return false;
+        }
+
+        // ── Rule 2: Base confidence threshold ──────────────────────────
         if (confidence < emissionGateThreshold) {
             return false;
         }
 
-        // Heuristic: if we have multi-modal corroboration, grant passage
-        if (event.getCorroboratingSensors() >= 2) {
+        // ── Rule 3: Multi-modal corroboration boost — ONLY for real emission types ──
+        // (Scenario 2 fix) During turnaround, gas + thermal + acoustic all fire, but it's
+        // planned venting, not a fugitive leak. Multi-modal corroboration should only
+        // boost passage for classifications where "more sensors = more real."
+        // PLANNED_VENTING, MAINTENANCE_ACTIVITY, SENSOR_ARTIFACT don't benefit from
+        // sensor agreement — they need SAP context validation, not sensor count.
+        if (event.getCorroboratingSensors() >= 2
+                && classification == EmissionClassification.FUGITIVE_EMISSION) {
             return true;
         }
 
-        // Heuristic: if maintenance is active, suppress false alarms (MAINTENANCE_ACTIVITY)
-        if (event.isSapMaintenanceActive() &&
-            classification.equals(EmissionClassification.MAINTENANCE_ACTIVITY)) {
+        // ── Rule 4: SAP context suppression — maintenance activity during active maintenance ──
+        // If SAP confirms maintenance is active and the LLM classified it correctly as
+        // MAINTENANCE_ACTIVITY, suppress the event (no compliance action needed).
+        if (event.isSapMaintenanceActive()
+                && classification == EmissionClassification.MAINTENANCE_ACTIVITY) {
+            log.info("  Emission Gate: SUPPRESSED — maintenance active matches MAINTENANCE_ACTIVITY classification");
+            return false;
+        }
+
+        // ── Rule 5: SAP context suppression — planned venting during turnaround ──
+        if (event.isSapTurnaroundActive()
+                && classification == EmissionClassification.PLANNED_VENTING) {
+            log.info("  Emission Gate: SUPPRESSED — turnaround active matches PLANNED_VENTING classification");
             return false;
         }
 
@@ -387,17 +497,34 @@ public class EmissionPipelineOrchestrator {
 
         if (previousDetections7d == 0) {
             return "FIRST_DETECTION";
-        } else if (previousDetections7d >= 3) {
-            // Check confidence trend in recent events
-            if (recentEvents.size() >= 2) {
-                double oldConfidence = recentEvents.get(0).getConfidence();
-                double newConfidence = recentEvents.get(recentEvents.size() - 1).getConfidence();
-                if (newConfidence > oldConfidence + 0.05) {
+        } else if (previousDetections7d >= 2) {
+            // (Scenario 4 fix) Compare SENSOR READINGS, not LLM confidence.
+            // A leak escalating from 25 ppm → 100 ppm must show ESCALATING even if
+            // the LLM confidence stayed flat at 0.85. Raw readings are physical truth;
+            // confidence is just the model's self-assessment.
+            double oldReading = recentEvents.get(0).getRawReading();
+            double newReading = recentEvents.get(recentEvents.size() - 1).getRawReading();
+
+            // Use proportional comparison: 20% increase = escalating, 20% decrease = declining
+            // This handles different scales (25→35 ppm is a 40% jump; 500→520 ppm is only 4%)
+            if (oldReading > 0) {
+                double changeRatio = (newReading - oldReading) / oldReading;
+                if (changeRatio > 0.20) {
                     return "ESCALATING";
-                } else if (oldConfidence > newConfidence + 0.05) {
+                } else if (changeRatio < -0.20) {
                     return "DECLINING";
                 }
+            } else if (newReading > 0) {
+                // Old reading was 0, new reading is positive — escalating
+                return "ESCALATING";
             }
+
+            // Also check if detection frequency itself is escalating
+            // (3+ detections in 7 days when previous week had none is a pattern)
+            if (previousDetections7d >= 5) {
+                return "ESCALATING";
+            }
+
             return "STABLE";
         }
 
@@ -529,7 +656,10 @@ public class EmissionPipelineOrchestrator {
             long totalLatencyMs,
             String trendDirection,
             boolean complianceGenerated,
-            String workOrderNumber
+            String workOrderNumber,
+            String remediationAction,
+            String remediationUrgency,
+            Double remediationEstimatedHours
     ) {
         /**
          * Convenience predicate: true if this emission required and received

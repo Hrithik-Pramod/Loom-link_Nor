@@ -94,7 +94,7 @@ public class RiskScoringService {
         // Sort by risk score descending
         assessments.sort(Comparator.comparingDouble(EquipmentRiskAssessment::riskScore).reversed());
 
-        log.info("Scored {} equipment items — top risk: {} (score: {:.3f})",
+        log.info("Scored {} equipment items — top risk: {} (score: {})",
                 assessments.size(),
                 assessments.isEmpty() ? "N/A" : assessments.get(0).equipmentTag(),
                 assessments.isEmpty() ? 0.0 : assessments.get(0).riskScore());
@@ -271,6 +271,7 @@ public class RiskScoringService {
             case INSTRUMENT -> 0.3;
             case MOTOR -> 0.5;
             case ELECTRICAL -> 0.4;
+            case UNKNOWN -> { reasoning.append("Unknown equipment class — elevated inspection priority. "); yield 0.75; }
         };
     }
 
@@ -305,6 +306,7 @@ public class RiskScoringService {
             case VESSEL, HEAT_EXCHANGER -> "thermal_scan";
             case SAFETY_SYSTEM -> "full_inspection";
             case INSTRUMENT, ELECTRICAL -> "visual_inspection";
+            case UNKNOWN -> "full_inspection";
         };
     }
 

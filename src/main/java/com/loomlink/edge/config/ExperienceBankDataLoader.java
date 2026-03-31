@@ -59,6 +59,13 @@ public class ExperienceBankDataLoader implements CommandLineRunner {
         log.info("  PHASE 0: LEGACY DEBT RECOVERY — Loading Experience Bank");
         log.info("════════════════════════════════════════════════════════");
 
+        // Skip if already populated (ddl-auto: update preserves data between restarts)
+        long existingAssets = assetRepo.count();
+        if (existingAssets > 0) {
+            log.info("Experience Bank already populated ({} assets), skipping seed", existingAssets);
+            return;
+        }
+
         List<Asset> assets = createAssets();
         assetRepo.saveAll(assets);
         log.info("Loaded {} assets into Experience Bank", assets.size());

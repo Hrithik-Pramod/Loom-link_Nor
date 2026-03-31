@@ -179,13 +179,62 @@ public class ExperienceBankFeedbackService {
         return stats;
     }
 
+    /**
+     * Must EXACTLY match SemanticCacheService.normalize() — including Norwegian keyword
+     * translation. If these diverge, cache lookups and promotions normalize differently,
+     * causing exact matches to miss.
+     *
+     * TODO: Extract shared normalization into a utility class to prevent drift.
+     */
     private String normalizeText(String text) {
         if (text == null) return "";
-        // Must match SemanticCacheService.normalize() — preserve Norwegian chars (å, ø, æ, ö, ä, ü)
-        return text.toLowerCase().trim()
+        // Step 1: Lowercase, strip punctuation, collapse whitespace
+        String normalized = text.toLowerCase().trim()
                 .replaceAll("[^a-z0-9åøæöäü\\s]", "")
                 .replaceAll("\\s+", " ");
+
+        // Step 2: Translate Norwegian keywords to English (must match SemanticCacheService)
+        StringBuilder translated = new StringBuilder();
+        for (String word : normalized.split(" ")) {
+            String english = NORWEGIAN_KEYWORDS.get(word);
+            translated.append(english != null ? english : word).append(" ");
+        }
+        return translated.toString().trim();
     }
+
+    // Must stay in sync with SemanticCacheService.NORWEGIAN_KEYWORDS
+    private static final java.util.Map<String, String> NORWEGIAN_KEYWORDS = java.util.Map.ofEntries(
+            java.util.Map.entry("pumpe", "pump"), java.util.Map.entry("kompressor", "compressor"),
+            java.util.Map.entry("ventil", "valve"), java.util.Map.entry("motor", "motor"),
+            java.util.Map.entry("turbin", "turbine"), java.util.Map.entry("generator", "generator"),
+            java.util.Map.entry("varmeveksler", "heat exchanger"), java.util.Map.entry("rør", "pipe"),
+            java.util.Map.entry("rørseksjon", "pipe section"),
+            java.util.Map.entry("vibrasjon", "vibration"), java.util.Map.entry("støy", "noise"),
+            java.util.Map.entry("lyd", "sound"), java.util.Map.entry("lekkasje", "leak"),
+            java.util.Map.entry("lekker", "leaking"), java.util.Map.entry("drypp", "drip"),
+            java.util.Map.entry("overoppheting", "overheating"), java.util.Map.entry("varm", "hot"),
+            java.util.Map.entry("temperatur", "temperature"), java.util.Map.entry("trykk", "pressure"),
+            java.util.Map.entry("korrosjon", "corrosion"), java.util.Map.entry("erosjon", "erosion"),
+            java.util.Map.entry("sprekk", "crack"), java.util.Map.entry("brudd", "breakdown"),
+            java.util.Map.entry("tett", "plugged"), java.util.Map.entry("blokkert", "blocked"),
+            java.util.Map.entry("tilstoppet", "clogged"),
+            java.util.Map.entry("skrapelyd", "grinding noise"), java.util.Map.entry("banking", "knocking"),
+            java.util.Map.entry("rasling", "rattling"), java.util.Map.entry("slitasje", "wear"),
+            java.util.Map.entry("lager", "bearing"), java.util.Map.entry("tetning", "seal"),
+            java.util.Map.entry("pakning", "gasket"), java.util.Map.entry("pakningsboks", "packing box"),
+            java.util.Map.entry("stoppet", "stopped"), java.util.Map.entry("starter", "starts"),
+            java.util.Map.entry("fungerer", "functions"), java.util.Map.entry("svikter", "failing"),
+            java.util.Map.entry("skifte", "replace"), java.util.Map.entry("byttes", "replace"),
+            java.util.Map.entry("sjekket", "checked"), java.util.Map.entry("oppdaget", "detected"),
+            java.util.Map.entry("observert", "observed"), java.util.Map.entry("usikker", "unsure"),
+            java.util.Map.entry("ukjent", "unknown"), java.util.Map.entry("mulig", "possible"),
+            java.util.Map.entry("høy", "high"), java.util.Map.entry("lav", "low"),
+            java.util.Map.entry("over", "above"), java.util.Map.entry("under", "below"),
+            java.util.Map.entry("øker", "increasing"), java.util.Map.entry("synker", "decreasing"),
+            java.util.Map.entry("annerledes", "different"), java.util.Map.entry("uvanlig", "unusual"),
+            java.util.Map.entry("noe", "something"), java.util.Map.entry("galt", "wrong"),
+            java.util.Map.entry("rar", "odd")
+    );
 
     private String truncate(String text, int maxLen) {
         if (text == null) return "";

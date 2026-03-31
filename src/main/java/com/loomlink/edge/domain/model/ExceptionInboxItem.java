@@ -1,5 +1,6 @@
 package com.loomlink.edge.domain.model;
 
+import com.loomlink.edge.domain.enums.EquipmentClass;
 import com.loomlink.edge.domain.enums.FailureModeCode;
 import jakarta.persistence.*;
 
@@ -100,6 +101,28 @@ public class ExceptionInboxItem {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // ── SLA Tracking (Ptil audit compliance) ───────────────────────
+
+    /** When this item was first viewed by an engineer (null = never seen). */
+    @Column(name = "first_viewed_at")
+    private Instant firstViewedAt;
+
+    /** Who first viewed this item. */
+    @Column(name = "first_viewed_by")
+    private String firstViewedBy;
+
+    /**
+     * SLA target hours based on priority:
+     * CRITICAL = 1h, HIGH = 4h, MEDIUM = 24h, LOW = 72h
+     * Per NORSOK Z-008 response time requirements.
+     */
+    @Column(name = "sla_target_hours")
+    private Integer slaTargetHours;
+
+    /** Whether the SLA was met (review completed within target). */
+    @Column(name = "sla_met")
+    private Boolean slaMet;
+
     protected ExceptionInboxItem() {}
 
     public static ExceptionInboxItem fromRejection(
@@ -122,14 +145,79 @@ public class ExceptionInboxItem {
         item.reviewStatus = "PENDING";
         item.createdAt = Instant.now();
 
-        // Priority: higher confidence gap = lower priority (the AI was very unsure)
-        // Low confidence on safety-critical equipment = higher priority
+        // ── Priority Logic (Scenario 7 fix) ─────────────────────────
+        //
+        // OLD (broken): Very uncertain = LOW priority.
+        // PROBLEM: A notification the AI can't classify AT ALL might describe
+        //          a genuinely novel/unusual failure that needs urgent attention.
+        //          A pipe about to burst might produce symptoms the LLM has never seen.
+        //
+        // NEW: Priority is a combination of confidence gap AND equipment criticality.
+        //
+        //   CRITICAL: Safety equipment (PRV, PSV, ESD) regardless of confidence gap
+        //   HIGH:     AI almost passed (gap < 0.05) — likely correct, quick review
+        //             OR AI had NO idea (UNK/very low confidence) — might be novel failure
+        //   MEDIUM:   Moderate uncertainty (gap 0.05-0.20)
+        //   LOW:      Dismissed/noise indicators in text ("not sure", "maybe", "kanskje")
+        //
+
+        EquipmentClass equipClass = EquipmentClass.fromEquipmentTag(notification.getEquipmentTag());
         double gap = gateResult.getThresholdApplied() - classification.getConfidence();
-        if (gap < 0.05) item.priority = "HIGH";       // Almost passed — likely correct
-        else if (gap < 0.15) item.priority = "MEDIUM"; // Moderate uncertainty
-        else item.priority = "LOW";                     // Very uncertain — probably noise
+        boolean isUnknownOrVeryLow = classification.getFailureModeCode() == FailureModeCode.UNK
+                || classification.getConfidence() < 0.30;
+
+        if (equipClass.isSafetyCritical()) {
+            item.priority = "CRITICAL";  // Safety equipment always gets top priority
+        } else if (gap < 0.05) {
+            item.priority = "HIGH";      // Almost passed — quick engineer review
+        } else if (isUnknownOrVeryLow) {
+            item.priority = "HIGH";      // AI couldn't classify — might be novel/serious failure
+        } else if (gap < 0.20) {
+            item.priority = "MEDIUM";    // Moderate uncertainty
+        } else {
+            item.priority = "LOW";       // Large gap with some classification — likely noise
+        }
+
+        // Set SLA target based on priority (NORSOK Z-008 response times)
+        item.slaTargetHours = switch (item.priority) {
+            case "CRITICAL" -> 1;    // Safety equipment: 1 hour
+            case "HIGH" -> 4;        // Near-pass or novel failure: 4 hours
+            case "MEDIUM" -> 24;     // Moderate uncertainty: 24 hours
+            default -> 72;           // Low priority: 72 hours
+        };
 
         return item;
+    }
+
+    // ── View Tracking (SLA) ─────────────────────────────────────────
+
+    /**
+     * Record that an engineer has viewed this item in the Exception Inbox.
+     * Only records the FIRST view — subsequent views don't overwrite.
+     */
+    public void recordView(String viewedBy) {
+        if (this.firstViewedAt == null) {
+            this.firstViewedAt = Instant.now();
+            this.firstViewedBy = viewedBy;
+        }
+    }
+
+    /**
+     * Get the time in hours this item waited before first being viewed.
+     * Returns null if never viewed.
+     */
+    public Double getWaitHoursBeforeView() {
+        if (firstViewedAt == null) return null;
+        return java.time.Duration.between(createdAt, firstViewedAt).toMinutes() / 60.0;
+    }
+
+    /**
+     * Get the total time in hours from creation to review completion.
+     * Returns null if not yet reviewed.
+     */
+    public Double getResolutionHours() {
+        if (reviewedAt == null) return null;
+        return java.time.Duration.between(createdAt, reviewedAt).toMinutes() / 60.0;
     }
 
     // ── Review Actions ──────────────────────────────────────────────
@@ -139,6 +227,7 @@ public class ExceptionInboxItem {
         this.reviewedBy = reviewedBy;
         this.reviewNotes = notes;
         this.reviewedAt = Instant.now();
+        computeSlaMet();
     }
 
     public void reclassify(String reviewedBy, FailureModeCode correctCode, String notes) {
@@ -147,6 +236,7 @@ public class ExceptionInboxItem {
         this.manualFailureCode = correctCode;
         this.reviewNotes = notes;
         this.reviewedAt = Instant.now();
+        computeSlaMet();
     }
 
     public void dismiss(String reviewedBy, String notes) {
@@ -154,6 +244,17 @@ public class ExceptionInboxItem {
         this.reviewedBy = reviewedBy;
         this.reviewNotes = notes;
         this.reviewedAt = Instant.now();
+        computeSlaMet();
+    }
+
+    /**
+     * Compute whether the SLA was met based on resolution time vs target.
+     */
+    private void computeSlaMet() {
+        if (this.slaTargetHours != null && this.reviewedAt != null && this.createdAt != null) {
+            double resolutionHours = java.time.Duration.between(createdAt, reviewedAt).toMinutes() / 60.0;
+            this.slaMet = resolutionHours <= this.slaTargetHours;
+        }
     }
 
     // Getters
@@ -176,4 +277,8 @@ public class ExceptionInboxItem {
     public String getReviewNotes() { return reviewNotes; }
     public Instant getReviewedAt() { return reviewedAt; }
     public Instant getCreatedAt() { return createdAt; }
+    public Instant getFirstViewedAt() { return firstViewedAt; }
+    public String getFirstViewedBy() { return firstViewedBy; }
+    public Integer getSlaTargetHours() { return slaTargetHours; }
+    public Boolean getSlaMet() { return slaMet; }
 }
