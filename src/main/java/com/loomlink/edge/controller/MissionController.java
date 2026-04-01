@@ -1,7 +1,9 @@
 package com.loomlink.edge.controller;
 
 import com.loomlink.edge.domain.enums.RobotPlatform;
+import com.loomlink.edge.domain.model.AuditLog;
 import com.loomlink.edge.domain.model.RobotMission;
+import com.loomlink.edge.repository.AuditLogRepository;
 import com.loomlink.edge.service.MissionPlanningService;
 import com.loomlink.edge.service.RiskScoringService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,9 +31,12 @@ public class MissionController {
     private static final Logger log = LoggerFactory.getLogger(MissionController.class);
 
     private final MissionPlanningService planningService;
+    private final AuditLogRepository auditLogRepository;
 
-    public MissionController(MissionPlanningService planningService) {
+    public MissionController(MissionPlanningService planningService,
+                              AuditLogRepository auditLogRepository) {
         this.planningService = planningService;
+        this.auditLogRepository = auditLogRepository;
     }
 
     // ── Mission Planning ───────────────────────────────────────────
@@ -49,6 +54,10 @@ public class MissionController {
         RobotMission mission = planningService.planMission(
                 request.robotId(), platform, request.facilityArea(), maxWaypoints);
 
+        // Audit trail: record mission planning event
+        AuditLog auditEntry = AuditLog.recordMissionEvent(mission, "PLAN", "AI_PLANNER");
+        auditLogRepository.save(auditEntry);
+
         return ResponseEntity.ok(mission);
     }
 
@@ -60,6 +69,11 @@ public class MissionController {
             @PathVariable UUID missionId,
             @RequestParam(defaultValue = "operator") String operatorId) {
         RobotMission mission = planningService.dispatchMission(missionId, operatorId);
+
+        // Audit trail: record mission dispatch event
+        AuditLog auditEntry = AuditLog.recordMissionEvent(mission, "DISPATCH", operatorId);
+        auditLogRepository.save(auditEntry);
+
         return ResponseEntity.ok(mission);
     }
 
@@ -92,12 +106,7 @@ public class MissionController {
     @Operation(summary = "Get ISAR-compatible mission definition",
             description = "Returns mission in ISAR format for direct robot dispatch")
     public ResponseEntity<Map<String, Object>> getIsarDefinition(@PathVariable UUID missionId) {
-        List<RobotMission> missions = planningService.getAllMissions();
-        RobotMission mission = missions.stream()
-                .filter(m -> m.getId().equals(missionId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Mission not found: " + missionId));
-
+        RobotMission mission = planningService.getMissionById(missionId);
         return ResponseEntity.ok(buildIsarDefinition(mission));
     }
 
@@ -129,7 +138,9 @@ public class MissionController {
         isar.put("id", mission.getId().toString());
         isar.put("name", mission.getMissionName());
         isar.put("robot_id", mission.getRobotId());
+        isar.put("platform", mission.getRobotPlatform().name());
         isar.put("status", mission.getStatus().name());
+        isar.put("flotilla_ref", mission.getFlotillaRef());
 
         List<Map<String, Object>> tasks = new java.util.ArrayList<>();
         for (var wp : mission.getWaypoints()) {
@@ -138,18 +149,42 @@ public class MissionController {
             task.put("tag", wp.getEquipmentTag());
             task.put("type", wp.getIsarTaskType());
             task.put("pose", Map.of(
-                    "position", Map.of("x", 0.0, "y", 0.0, "z", 0.0),
+                    "position", parseCoordinates(wp.getCoordinates()),
                     "orientation", Map.of("x", 0.0, "y", 0.0, "z", 0.0, "w", 1.0)
             ));
             task.put("inspection_target", Map.of(
                     "tag", wp.getEquipmentTag(),
-                    "sensors", wp.getRecommendedSensors().split(","),
+                    "sensors", wp.getRecommendedSensors() != null ? wp.getRecommendedSensors().split(",") : new String[]{"VISUAL"},
                     "dwell_time_seconds", wp.getDwellSeconds()
             ));
+            task.put("priority", wp.getPriority().name());
             tasks.add(task);
         }
         isar.put("tasks", tasks);
         return isar;
+    }
+
+    /**
+     * Parse waypoint coordinates (e.g. "62.7341°N, 6.1521°E") into ISAR pose format.
+     * Falls back to zeros if coordinates are null or unparseable.
+     */
+    private Map<String, Double> parseCoordinates(String coordinates) {
+        if (coordinates == null || coordinates.isBlank()) {
+            return Map.of("x", 0.0, "y", 0.0, "z", 0.0);
+        }
+        try {
+            // Format: "62.7341°N, 6.1521°E" → extract numeric lat/lon
+            String cleaned = coordinates.replaceAll("[°NSEW]", "").trim();
+            String[] parts = cleaned.split(",\\s*");
+            if (parts.length >= 2) {
+                double lat = Double.parseDouble(parts[0].trim());
+                double lon = Double.parseDouble(parts[1].trim());
+                return Map.of("x", lon, "y", lat, "z", 0.0);
+            }
+        } catch (NumberFormatException e) {
+            log.debug("Could not parse coordinates '{}', using defaults", coordinates);
+        }
+        return Map.of("x", 0.0, "y", 0.0, "z", 0.0);
     }
 
     // ── Request DTOs ───────────────────────────────────────────────

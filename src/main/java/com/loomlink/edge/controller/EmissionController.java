@@ -2,7 +2,9 @@ package com.loomlink.edge.controller;
 
 import com.loomlink.edge.domain.enums.EmissionClassification;
 import com.loomlink.edge.domain.enums.SensorModality;
+import com.loomlink.edge.domain.model.AuditLog;
 import com.loomlink.edge.domain.model.EmissionEvent;
+import com.loomlink.edge.repository.AuditLogRepository;
 import com.loomlink.edge.repository.EmissionEventRepository;
 import com.loomlink.edge.service.EmissionPipelineOrchestrator;
 import com.loomlink.edge.service.RbacService;
@@ -59,14 +61,17 @@ public class EmissionController {
 
     private final EmissionPipelineOrchestrator pipeline;
     private final EmissionEventRepository repository;
+    private final AuditLogRepository auditLogRepository;
     private final RbacService rbac;
 
     public EmissionController(
             EmissionPipelineOrchestrator pipeline,
             EmissionEventRepository repository,
+            AuditLogRepository auditLogRepository,
             RbacService rbac) {
         this.pipeline = pipeline;
         this.repository = repository;
+        this.auditLogRepository = auditLogRepository;
         this.rbac = rbac;
     }
 
@@ -342,7 +347,12 @@ public class EmissionController {
             // Apply the reclassification
             event.reclassify(request.reviewedBy(), correctedClass, request.notes());
             repository.save(event);
-            log.info("Emission {} RECLASSIFIED to {} by {} (RBAC: SENIOR_ENGINEER)",
+
+            // Write to shared audit trail
+            AuditLog auditEntry = AuditLog.recordEmissionReview(
+                    event, "RECLASSIFY", request.reviewedBy(), request.notes());
+            auditLogRepository.save(auditEntry);
+            log.info("Emission {} RECLASSIFIED to {} by {} (RBAC: SENIOR_ENGINEER) — audit log written",
                     id, correctedClass, request.reviewedBy());
 
             return ResponseEntity.ok(toMap(event));
@@ -367,7 +377,12 @@ public class EmissionController {
             return repository.findById(id).map(event -> {
                 event.confirm(request.reviewedBy(), request.notes());
                 repository.save(event);
-                log.info("Emission {} CONFIRMED by {}", id, request.reviewedBy());
+
+                // Write to shared audit trail for unified compliance visibility
+                AuditLog auditEntry = AuditLog.recordEmissionReview(
+                        event, "CONFIRM", request.reviewedBy(), request.notes());
+                auditLogRepository.save(auditEntry);
+                log.info("Emission {} CONFIRMED by {} — audit log written", id, request.reviewedBy());
 
                 return ResponseEntity.ok(toMap(event));
             }).orElse(ResponseEntity.notFound().build());
@@ -401,7 +416,12 @@ public class EmissionController {
         return repository.findById(id).map(event -> {
             event.dismiss(request.reviewedBy(), request.notes());
             repository.save(event);
-            log.info("Emission {} DISMISSED by {} (RBAC: SENIOR_ENGINEER)", id, request.reviewedBy());
+
+            // Write to shared audit trail
+            AuditLog auditEntry = AuditLog.recordEmissionReview(
+                    event, "DISMISS", request.reviewedBy(), request.notes());
+            auditLogRepository.save(auditEntry);
+            log.info("Emission {} DISMISSED by {} (RBAC: SENIOR_ENGINEER) — audit log written", id, request.reviewedBy());
 
             return ResponseEntity.ok(toMap(event));
         }).orElse(ResponseEntity.notFound().build());

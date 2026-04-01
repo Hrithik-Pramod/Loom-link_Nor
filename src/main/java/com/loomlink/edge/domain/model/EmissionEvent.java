@@ -185,6 +185,16 @@ public class EmissionEvent {
     @Column(name = "sensor_distance_meters")
     private Double sensorDistanceMeters;
 
+    /**
+     * Whether an OGI (Optical Gas Imaging) survey is required per EN 15446.
+     * Set to true when the screening leak rate exceeds the LDAR threshold (0.5 kg/hr)
+     * or when multi-modal sensor corroboration confirms the leak (3+ sensors).
+     * Screening estimates are correlation-based (EPA Method 21); confirmed leaks
+     * require OGI for accurate quantification under EU 2024/1787.
+     */
+    @Column(name = "ogi_survey_required")
+    private Boolean ogiSurveyRequired = false;
+
     // ── Compliance Lifecycle ───────────────────────────────────────
 
     /** EU 2024/1787 compliance lifecycle status. */
@@ -465,6 +475,8 @@ public class EmissionEvent {
     public String getGateReasoning() { return gateReasoning; }
     public Double getEstimatedLeakRateKgHr() { return estimatedLeakRateKgHr; }
     public Double getSensorDistanceMeters() { return sensorDistanceMeters; }
+    public Boolean isOgiSurveyRequired() { return ogiSurveyRequired != null ? ogiSurveyRequired : false; }
+    public void setOgiSurveyRequired(Boolean ogiSurveyRequired) { this.ogiSurveyRequired = ogiSurveyRequired != null ? ogiSurveyRequired : false; }
     public ComplianceStatus getComplianceStatus() { return complianceStatus; }
     public String getSapWorkOrderNumber() { return sapWorkOrderNumber; }
     public String getIso14224FailureCode() { return iso14224FailureCode; }

@@ -419,7 +419,7 @@
                 <button class="tab" onclick="switchTab('inbox')">Exception Inbox <span id="inbox-badge" style="background:var(--accent-red);color:white;border-radius:10px;padding:1px 7px;font-size:11px;margin-left:4px;display:none;">0</span></button>
                 <button class="tab" onclick="switchTab('resilience')">Experience Bank</button>
                 <button class="tab" onclick="switchTab('emissions')">SARA Emissions</button>
-                <!-- <button class="tab" onclick="switchTab('missions')">Mission Planning</button> -->
+                <button class="tab" onclick="switchTab('missions')">Mission Planning</button>
                 <button class="tab" onclick="switchTab('audit')">Audit Trail</button>
                 <button class="tab" onclick="switchTab('overview')">Fleet Intelligence</button>
                 <button class="tab" onclick="switchTab('detail')">Asset Detail</button>
@@ -3097,6 +3097,7 @@ async function loadEmissionEvents() {
             return;
         }
 
+        _emissionEventsCache = filteredEvents;
         container.innerHTML = filteredEvents.map(ev => {
             const clsColors = {
                 'FUGITIVE_EMISSION': 'var(--accent-red)',
@@ -3111,7 +3112,7 @@ async function loadEmissionEvents() {
             const trendIcon = ev.trendDirection === 'ESCALATING' ? '&#9650;' : ev.trendDirection === 'DECLINING' ? '&#9660;' : '&#9644;';
             const trendColor = ev.trendDirection === 'ESCALATING' ? 'var(--accent-red)' : ev.trendDirection === 'DECLINING' ? 'var(--accent-green)' : 'var(--text-secondary)';
 
-            return `<div class="card" style="margin-bottom:10px;border-left:4px solid ${clsColor};padding:14px;">
+            return `<div class="card" style="margin-bottom:10px;border-left:4px solid ${clsColor};padding:14px;cursor:pointer;transition:background 0.15s;" onclick="showEmissionDetailModal('${ev.id}')" onmouseenter="this.style.background='var(--bg-primary)'" onmouseleave="this.style.background=''">
                 <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:8px;">
                     <div>
                         <span style="font-weight:700;font-size:15px;">${ev.equipmentTag}</span>
@@ -3146,9 +3147,9 @@ async function loadEmissionEvents() {
                         ${ev.reviewStatus === 'CONFIRMED' ? '<span style="font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(16,185,129,0.15);color:var(--accent-green);font-weight:600;">&#10003; Confirmed</span>'
                           : ev.reviewStatus === 'DISMISSED' ? '<span style="font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(107,114,128,0.15);color:var(--text-secondary);font-weight:600;">Dismissed</span>'
                           : ev.reviewStatus === 'RECLASSIFIED' ? '<span style="font-size:11px;padding:3px 10px;border-radius:4px;background:rgba(139,92,246,0.15);color:var(--accent-purple);font-weight:600;">Reclassified</span>'
-                          : `<button class="btn" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:3px 10px;font-size:11px;" onclick="showEmissionReviewModal('${ev.id}','confirm')">Confirm</button>
-                             <button class="btn" style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:3px 10px;font-size:11px;" onclick="showEmissionReviewModal('${ev.id}','reclassify')">Reclassify</button>
-                             <button class="btn" style="background:var(--bg-primary);color:var(--text-secondary);border:1px solid var(--border);padding:3px 10px;font-size:11px;" onclick="showEmissionReviewModal('${ev.id}','dismiss')">Dismiss</button>`}
+                          : `<button class="btn" style="background:var(--bg-primary);color:var(--accent-green);border:1px solid var(--accent-green);padding:3px 10px;font-size:11px;" onclick="event.stopPropagation();showEmissionReviewModal('${ev.id}','confirm')">Confirm</button>
+                             <button class="btn" style="background:var(--bg-primary);color:var(--accent-blue);border:1px solid var(--accent-blue);padding:3px 10px;font-size:11px;" onclick="event.stopPropagation();showEmissionReviewModal('${ev.id}','reclassify')">Reclassify</button>
+                             <button class="btn" style="background:var(--bg-primary);color:var(--text-secondary);border:1px solid var(--border);padding:3px 10px;font-size:11px;" onclick="event.stopPropagation();showEmissionReviewModal('${ev.id}','dismiss')">Dismiss</button>`}
                     </div>
                 </div>
             </div>`;
@@ -3156,6 +3157,129 @@ async function loadEmissionEvents() {
     } catch(e) {
         console.error('Emission events load error:', e);
     }
+}
+
+// ── Emission Detail Popup ────────────────────────────────────────────
+// Stores the last-loaded emission events so the detail modal can find them by ID.
+let _emissionEventsCache = [];
+
+function showEmissionDetailModal(eventId) {
+    const ev = _emissionEventsCache.find(e => e.id === eventId);
+    if (!ev) return;
+
+    const clsColors = {
+        'FUGITIVE_EMISSION': 'var(--accent-red)',
+        'PLANNED_VENTING': 'var(--accent-blue)',
+        'MAINTENANCE_ACTIVITY': 'var(--accent-orange)',
+        'SENSOR_ARTIFACT': 'var(--accent-purple)',
+        'NORMAL_PROCESS': 'var(--accent-green)',
+        'UNKNOWN': 'var(--text-secondary)'
+    };
+    const clsColor = clsColors[ev.classification] || 'var(--text-secondary)';
+    const gateColor = ev.gatePassed ? 'var(--accent-green)' : 'var(--accent-red)';
+    const trendIcon = ev.trendDirection === 'ESCALATING' ? '&#9650;' : ev.trendDirection === 'DECLINING' ? '&#9660;' : '&#9644;';
+    const trendColor = ev.trendDirection === 'ESCALATING' ? 'var(--accent-red)' : ev.trendDirection === 'DECLINING' ? 'var(--accent-green)' : 'var(--text-secondary)';
+    const urgencyColor = ev.remediationUrgency === 'IMMEDIATE' ? 'var(--accent-red)' : ev.remediationUrgency === 'WITHIN_24H' ? 'var(--accent-orange)' : 'var(--accent-green)';
+
+    const overlay = document.createElement('div');
+    overlay.id = 'emission-detail-overlay';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+
+    overlay.innerHTML = `
+        <div style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:28px;width:700px;max-width:95vw;max-height:90vh;overflow-y:auto;border-left:5px solid ${clsColor};">
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:18px;">
+                <div>
+                    <span style="font-weight:800;font-size:20px;color:var(--text-primary);">${ev.equipmentTag}</span>
+                    <span style="margin-left:10px;font-size:13px;color:var(--text-secondary);">${ev.locationArea || ''}</span>
+                </div>
+                <button onclick="document.getElementById('emission-detail-overlay').remove()" style="background:transparent;border:1px solid var(--border);color:var(--text-secondary);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:16px;">&times;</button>
+            </div>
+
+            <!-- Classification & Status Badges -->
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;">
+                <span style="font-size:12px;padding:4px 12px;border-radius:6px;font-weight:700;background:${clsColor}20;color:${clsColor};">${(ev.classification || 'UNKNOWN').replace(/_/g,' ')}</span>
+                <span style="font-size:12px;padding:4px 12px;border-radius:6px;font-weight:700;background:${gateColor}20;color:${gateColor};">${ev.gatePassed ? 'GATE PASSED' : 'GATE REJECTED'}</span>
+                ${ev.complianceReportGenerated ? '<span style="font-size:12px;padding:4px 12px;border-radius:6px;background:rgba(16,185,129,0.15);color:var(--accent-green);font-weight:700;">EU DOCUMENTED</span>' : ''}
+                ${ev.ogiSurveyRequired ? '<span style="font-size:12px;padding:4px 12px;border-radius:6px;background:rgba(245,158,11,0.15);color:var(--accent-orange);font-weight:700;">OGI SURVEY REQUIRED</span>' : ''}
+                <span style="font-size:12px;padding:4px 12px;border-radius:6px;background:rgba(16,185,129,0.1);color:var(--accent-green);">SARA: ${ev.robotId || 'robot'}</span>
+            </div>
+
+            <!-- Sensor Data Grid -->
+            <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:10px;">Sensor Data</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Sensor Modality</span><strong style="font-size:14px;">${ev.sensorModality || '?'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Raw Reading</span><strong style="font-size:14px;color:${clsColor};">${ev.rawReading} ${ev.readingUnit || 'ppm'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Confidence</span><strong style="font-size:14px;">${ev.confidence ? (ev.confidence * 100).toFixed(1) + '%' : 'N/A'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Corroborating Sensors</span><strong style="font-size:14px;">${ev.corroboratingSensors || 1}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Trend Direction</span><strong style="font-size:14px;color:${trendColor};">${trendIcon} ${ev.trendDirection || 'N/A'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Leak Rate</span><strong style="font-size:14px;">${ev.estimatedLeakRateKgHr ? ev.estimatedLeakRateKgHr.toFixed(3) + ' kg/hr' : 'N/A'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Wind Speed</span><strong style="font-size:14px;">${ev.windSpeedKmh ? ev.windSpeedKmh.toFixed(1) + ' km/h' : 'N/A'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Thermal Delta</span><strong style="font-size:14px;">${ev.thermalDeltaCelsius ? '+' + ev.thermalDeltaCelsius.toFixed(1) + '°C' : 'N/A'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Acoustic</span><strong style="font-size:14px;">${ev.acousticReadingDb ? ev.acousticReadingDb.toFixed(1) + ' dB' : 'N/A'} ${ev.acousticLeakSignature ? '(leak sig.)' : ''}</strong></div>
+                </div>
+            </div>
+
+            <!-- SAP Context -->
+            <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:10px;">SAP Context</div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Maintenance Active</span><strong style="font-size:14px;">${ev.sapMaintenanceActive ? 'YES' : 'NO'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Turnaround Active</span><strong style="font-size:14px;">${ev.sapTurnaroundActive ? 'YES' : 'NO'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Days Since Maintenance</span><strong style="font-size:14px;">${ev.daysSinceLastMaintenance != null ? ev.daysSinceLastMaintenance + ' days' : 'N/A'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Historical Baseline</span><strong style="font-size:14px;">${ev.historicalBaselinePpm ? ev.historicalBaselinePpm.toFixed(0) + ' ppm' : 'N/A'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Previous Detections (7d)</span><strong style="font-size:14px;">${ev.previousDetections7d != null ? ev.previousDetections7d : 'N/A'}</strong></div>
+                    <div><span style="font-size:11px;color:var(--text-secondary);display:block;">Work Order</span><strong style="font-size:14px;color:var(--accent-blue);">${ev.sapWorkOrderNumber || 'None'}</strong></div>
+                </div>
+            </div>
+
+            <!-- AI Reasoning (FULL) -->
+            <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:10px;">AI Reasoning</div>
+                <div style="font-size:13px;color:var(--text-primary);line-height:1.7;">${ev.reasoning || 'No reasoning available.'}</div>
+                <div style="margin-top:8px;font-size:11px;color:var(--text-secondary);">Model: ${ev.modelId || 'N/A'} | Latency: ${ev.inferenceLatencyMs || '?'}ms</div>
+            </div>
+
+            <!-- Remediation (FULL) -->
+            ${ev.remediationAction ? `
+            <div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-left:4px solid var(--accent-orange);border-radius:8px;padding:14px;margin-bottom:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                    <div style="font-size:11px;font-weight:700;color:var(--accent-orange);text-transform:uppercase;">Prescriptive Remediation</div>
+                    <div style="display:flex;gap:8px;">
+                        <span style="font-size:12px;padding:3px 10px;border-radius:6px;font-weight:700;background:${urgencyColor}20;color:${urgencyColor};">${ev.remediationUrgency || 'N/A'}</span>
+                        ${ev.remediationEstimatedHours ? '<span style="font-size:12px;padding:3px 10px;border-radius:6px;background:rgba(107,114,128,0.1);color:var(--text-secondary);font-weight:600;">Est. ' + ev.remediationEstimatedHours + 'h</span>' : ''}
+                    </div>
+                </div>
+                <div style="font-size:13px;color:var(--text-primary);line-height:1.7;">${ev.remediationAction}</div>
+            </div>` : ''}
+
+            <!-- Compliance & Meta -->
+            <div style="background:var(--bg-primary);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;margin-bottom:10px;">Compliance & Metadata</div>
+                <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;font-size:13px;">
+                    <div><span style="color:var(--text-secondary);">Mission:</span> <strong>${ev.missionId || 'N/A'}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Compliance Status:</span> <strong>${ev.complianceStatus || 'N/A'}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Review Status:</span> <strong>${ev.reviewStatus || 'PENDING'}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Detected At:</span> <strong>${ev.detectedAt ? new Date(ev.detectedAt).toLocaleString() : 'N/A'}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Gate Threshold:</span> <strong>${ev.gateThreshold ? (ev.gateThreshold * 100).toFixed(0) + '%' : 'N/A'}</strong></div>
+                    <div><span style="color:var(--text-secondary);">Gate Reasoning:</span> <strong>${ev.gateReasoning || 'N/A'}</strong></div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex;gap:10px;justify-content:flex-end;">
+                ${ev.reviewStatus !== 'CONFIRMED' && ev.reviewStatus !== 'DISMISSED' && ev.reviewStatus !== 'RECLASSIFIED' ? `
+                    <button onclick="document.getElementById('emission-detail-overlay').remove();showEmissionReviewModal('${ev.id}','confirm')" style="padding:8px 20px;background:rgba(16,185,129,0.1);color:var(--accent-green);border:1px solid rgba(16,185,129,0.4);border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Confirm</button>
+                    <button onclick="document.getElementById('emission-detail-overlay').remove();showEmissionReviewModal('${ev.id}','reclassify')" style="padding:8px 20px;background:rgba(59,130,246,0.1);color:var(--accent-blue);border:1px solid rgba(59,130,246,0.4);border-radius:6px;cursor:pointer;font-size:13px;font-weight:600;">Reclassify</button>
+                    <button onclick="document.getElementById('emission-detail-overlay').remove();showEmissionReviewModal('${ev.id}','dismiss')" style="padding:8px 20px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;">Dismiss</button>
+                ` : ''}
+                <button onclick="document.getElementById('emission-detail-overlay').remove()" style="padding:8px 20px;background:transparent;color:var(--text-secondary);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:13px;">Close</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
 }
 
 function loadEmissionScenario(scenario) {

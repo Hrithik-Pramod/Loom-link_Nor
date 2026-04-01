@@ -119,8 +119,8 @@ public class RulForecastingService {
                 null
         );
 
-        log.info("RUL forecast for {}: {:.1f}h (confidence: {:.2f}, risk: {})",
-                equipmentTag, rulHours, confidence, riskLevel);
+        log.info("RUL forecast for {}: {}h (confidence: {}, risk: {})",
+                equipmentTag, String.format("%.1f", rulHours), String.format("%.2f", confidence), riskLevel);
 
         return forecast;
     }

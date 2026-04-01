@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -51,6 +52,15 @@ public class EmissionExperienceBankService {
     private static final String EMISSION_MARKER = "[EMISSION]";
     private static final double SIMILARITY_THRESHOLD = 0.90;
     private static final int TRIGRAM_LENGTH = 3;
+
+    /**
+     * Cache TTL in days — entries older than this are skipped during lookup.
+     * Equipment degrades over time, so a classification from 90 days ago may no longer
+     * be accurate. Stale entries remain in the DB for audit purposes but are not served.
+     * This prevents the Experience Bank from returning outdated classifications for
+     * equipment whose condition has changed since the original reading.
+     */
+    private static final long CACHE_TTL_DAYS = 90;
 
     private final SemanticCacheRepository semanticCacheRepository;
     private final AtomicLong promotionCounter = new AtomicLong(0);
@@ -97,7 +107,18 @@ public class EmissionExperienceBankService {
         Optional<EmissionCacheHitResult> bestMatch = Optional.empty();
         double bestSimilarity = 0.0;
 
+        Instant ttlCutoff = Instant.now().minus(java.time.Duration.ofDays(CACHE_TTL_DAYS));
+
         for (SemanticCacheEntry entry : cachedEntries) {
+            // Skip stale entries — equipment condition changes over time, so old
+            // classifications may no longer reflect reality. Stale entries remain
+            // in DB for audit trail but are not served from cache.
+            if (entry.getCreatedAt() != null && entry.getCreatedAt().isBefore(ttlCutoff)) {
+                logger.trace("Skipping stale cache entry (created: {}, TTL cutoff: {})",
+                        entry.getCreatedAt(), ttlCutoff);
+                continue;
+            }
+
             Set<String> cachedTrigrams = extractTrigrams(entry.getNormalizedText());
             double similarity = computeJaccardSimilarity(queryTrigrams, cachedTrigrams);
 
@@ -126,10 +147,10 @@ public class EmissionExperienceBankService {
         long elapsedMs = System.currentTimeMillis() - startTime;
 
         if (bestMatch.isPresent()) {
-            logger.info("EMISSION CACHE HIT - Equipment: {}, Classification: {}, Similarity: {:.3f}, Time: {}ms",
+            logger.info("EMISSION CACHE HIT - Equipment: {}, Classification: {}, Similarity: {}, Time: {}ms",
                     emissionEvent.getEquipmentTag(),
                     bestMatch.get().cachedClassification,
-                    bestMatch.get().similarity,
+                    String.format("%.3f", bestMatch.get().similarity),
                     elapsedMs);
         } else {
             logger.debug("EMISSION CACHE MISS - Equipment: {}, Time: {}ms",

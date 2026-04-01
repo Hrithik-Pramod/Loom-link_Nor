@@ -134,9 +134,9 @@ public class MissionPlanningService {
         // Save
         RobotMission saved = missionRepo.save(mission);
 
-        log.info("MISSION PLANNED: {} — {} waypoints, risk: {:.3f}, est: {}min",
+        log.info("MISSION PLANNED: {} — {} waypoints, risk: {}, est: {}min",
                 saved.getMissionName(), saved.getWaypointCount(),
-                missionRisk, estimatedMinutes);
+                String.format("%.3f", missionRisk), estimatedMinutes);
         log.info("{}", LOG_DIVIDER);
 
         return saved;
@@ -178,6 +178,14 @@ public class MissionPlanningService {
      */
     public List<RobotMission> getAllMissions() {
         return missionRepo.findAllByOrderByCreatedAtDesc();
+    }
+
+    /**
+     * Get a specific mission by ID.
+     */
+    public RobotMission getMissionById(UUID missionId) {
+        return missionRepo.findById(missionId)
+                .orElseThrow(() -> new IllegalArgumentException("Mission not found: " + missionId));
     }
 
     /**

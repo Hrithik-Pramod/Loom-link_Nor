@@ -177,6 +177,90 @@ public class AuditLog {
         return log;
     }
 
+    /**
+     * Record a human review action on a Challenge 02 emission event (confirm, reclassify, dismiss).
+     * Creates an audit entry in the shared audit trail so emission reviews appear alongside
+     * Challenge 01 maintenance reviews for unified compliance visibility.
+     */
+    public static AuditLog recordEmissionReview(
+            EmissionEvent event,
+            String action,
+            String reviewedBy,
+            String reviewNotes) {
+
+        AuditLog log = new AuditLog();
+        log.sapNotificationNumber = event.getSapWorkOrderNumber() != null
+                ? event.getSapWorkOrderNumber() : "EM-" + event.getId().toString().substring(0, 8).toUpperCase();
+        log.equipmentTag = event.getEquipmentTag();
+        log.originalText = String.format("[EMISSION] %s at %s — %s %s, %s sensors, trend: %s",
+                event.getClassification(),
+                event.getEquipmentTag(),
+                event.getRawReading(), event.getReadingUnit() != null ? event.getReadingUnit() : "ppm",
+                event.getCorroboratingSensors(),
+                event.getTrendDirection() != null ? event.getTrendDirection() : "N/A");
+        log.failureModeCode = FailureModeCode.ELP;  // External Leakage - Process (closest ISO 14224 match for emissions)
+        log.causeCode = event.getClassification() != null ? event.getClassification().name() : "UNKNOWN";
+        log.confidenceScore = event.getConfidence();
+        log.llmReasoning = event.getReasoning();
+        log.modelName = "HUMAN_REVIEW";
+        log.inferenceLatencyMs = 0;
+        log.gateThreshold = event.getGateThreshold();
+        log.gatePassed = event.getGatePassed() != null ? event.getGatePassed() : false;
+        log.gateReasoning = String.format("Emission %s by %s. %s",
+                action.toUpperCase(), reviewedBy,
+                reviewNotes != null && !reviewNotes.isEmpty() ? "Notes: " + reviewNotes : "");
+        log.writtenToSap = "CONFIRM".equalsIgnoreCase(action) || "RECLASSIFY".equalsIgnoreCase(action);
+        log.bapiFunction = log.writtenToSap ? "EMISSION_REVIEW_WRITEBACK" : null;
+        log.totalPipelineLatencyMs = 0;
+        log.demoMode = false;
+        log.jsonValidFirstAttempt = true;
+        log.llmAttempts = 0;
+        log.createdAt = Instant.now();
+        return log;
+    }
+
+    /**
+     * Record a Challenge 04 mission planning/dispatch event.
+     * Creates an audit entry so robot missions appear in the unified audit trail
+     * alongside Ch1 maintenance and Ch2 emission reviews.
+     */
+    public static AuditLog recordMissionEvent(
+            RobotMission mission,
+            String action,
+            String operatorId) {
+
+        AuditLog log = new AuditLog();
+        log.sapNotificationNumber = mission.getFlotillaRef() != null
+                ? mission.getFlotillaRef() : "MISSION-" + mission.getId().toString().substring(0, 8).toUpperCase();
+        log.equipmentTag = mission.getFacilityArea();
+        log.originalText = String.format("[MISSION] %s — %s (%s), %d waypoints, risk: %.0f%%, area: %s",
+                action.toUpperCase(),
+                mission.getMissionName(),
+                mission.getRobotPlatform().getDisplayName(),
+                mission.getWaypointCount(),
+                mission.getMissionRiskScore() * 100,
+                mission.getFacilityArea());
+        log.failureModeCode = FailureModeCode.OTH; // "Other" — mission planning is not a failure mode
+        log.causeCode = "MISSION_" + action.toUpperCase();
+        log.confidenceScore = mission.getMissionRiskScore();
+        log.llmReasoning = mission.getPlanningReasoning();
+        log.modelName = "AI_MISSION_PLANNER";
+        log.inferenceLatencyMs = 0;
+        log.gateThreshold = 0.4; // auto-approve threshold
+        log.gatePassed = true;
+        log.gateReasoning = String.format("Mission %s by %s. Robot: %s, Platform: %s, Waypoints: %d",
+                action.toUpperCase(), operatorId,
+                mission.getRobotId(), mission.getRobotPlatform().name(), mission.getWaypointCount());
+        log.writtenToSap = "DISPATCH".equalsIgnoreCase(action);
+        log.bapiFunction = log.writtenToSap ? "ISAR_MISSION_DISPATCH" : null;
+        log.totalPipelineLatencyMs = 0;
+        log.demoMode = false;
+        log.jsonValidFirstAttempt = true;
+        log.llmAttempts = 0;
+        log.createdAt = Instant.now();
+        return log;
+    }
+
     // Getters
     public UUID getId() { return id; }
     public String getSapNotificationNumber() { return sapNotificationNumber; }

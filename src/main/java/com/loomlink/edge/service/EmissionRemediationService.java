@@ -33,6 +33,12 @@ public class EmissionRemediationService {
 
     private static final Logger log = LoggerFactory.getLogger(EmissionRemediationService.class);
 
+    private final RulForecastingService rulForecastingService;
+
+    public EmissionRemediationService(RulForecastingService rulForecastingService) {
+        this.rulForecastingService = rulForecastingService;
+    }
+
     /**
      * Generate a prescriptive remediation recommendation for a classified emission event.
      *
@@ -149,6 +155,37 @@ public class EmissionRemediationService {
             }
         }
 
+        // ── RUL Cross-Reference ──────────────────────────────────────────────
+        // If the asset has vibration/failure data, RUL can override urgency upward.
+        // A moderate leak (WITHIN_24H) on equipment with only 48h RUL left should
+        // escalate to IMMEDIATE — the equipment is about to fail regardless.
+        try {
+            RulForecastingService.RulForecast rul = rulForecastingService.forecast(event.getEquipmentTag());
+            if (rul != null && rul.rulHours() > 0) {
+                log.info("  RUL cross-reference: {} — {}h remaining, risk: {}",
+                        event.getEquipmentTag(), String.format("%.0f", rul.rulHours()), rul.riskLevel());
+
+                // Escalate urgency if RUL is shorter than current urgency window
+                if (rul.rulHours() <= 24 && !"IMMEDIATE".equals(urgency)) {
+                    urgency = "IMMEDIATE";
+                    action.append(" [RUL ESCALATION: Predicted remaining useful life is ")
+                          .append(String.format("%.0f", rul.rulHours()))
+                          .append("h — escalated to IMMEDIATE per RUL forecast.]");
+                    log.info("  RUL ESCALATION: {} upgraded to IMMEDIATE (RUL: {}h)",
+                            event.getEquipmentTag(), String.format("%.0f", rul.rulHours()));
+                } else if (rul.rulHours() <= 72 && "ROUTINE".equals(urgency)) {
+                    urgency = "WITHIN_72H";
+                    action.append(" [RUL advisory: ")
+                          .append(String.format("%.0f", rul.rulHours()))
+                          .append("h remaining — upgraded from ROUTINE to WITHIN_72H.]");
+                }
+            }
+        } catch (Exception e) {
+            // RUL data may not be available for all equipment (no vibration sensors, etc.)
+            // This is expected — proceed with leak-based urgency only.
+            log.debug("  RUL cross-reference unavailable for {}: {}", event.getEquipmentTag(), e.getMessage());
+        }
+
         log.info("  Remediation [FUGITIVE]: {} | Urgency: {} | Est: {}h",
                 event.getEquipmentTag(), urgency, estimatedHours);
 
@@ -263,8 +300,8 @@ public class EmissionRemediationService {
             action.append("If confirmed as real emission, reclassify and initiate appropriate response protocol.");
         }
 
-        log.info("  Remediation [UNKNOWN]: {} | Urgency: {} | Safety-critical: {} | Reading: {:.0f} ppm",
-                event.getEquipmentTag(), urgency, isSafetyCritical, reading);
+        log.info("  Remediation [UNKNOWN]: {} | Urgency: {} | Safety-critical: {} | Reading: {} ppm",
+                event.getEquipmentTag(), urgency, isSafetyCritical, String.format("%.0f", reading));
 
         return new RemediationResult(action.toString(), urgency, estimatedHours);
     }

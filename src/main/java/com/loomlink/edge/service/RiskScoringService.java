@@ -79,7 +79,16 @@ public class RiskScoringService {
         log.info("Scoring equipment for mission planning — area: {}",
                 facilityArea != null ? facilityArea : "ALL");
 
-        List<Asset> assets = assetRepo.findAll();
+        List<Asset> assets = (facilityArea != null && !facilityArea.isBlank())
+                ? assetRepo.findByFacilityArea(facilityArea)
+                : assetRepo.findAll();
+
+        // Fallback: if area filter returns empty (functional locations may not match
+        // module naming), use all assets so the demo always has data
+        if (assets.isEmpty() && facilityArea != null) {
+            log.info("No assets found for area '{}', falling back to all assets", facilityArea);
+            assets = assetRepo.findAll();
+        }
 
         List<EquipmentRiskAssessment> assessments = new ArrayList<>();
         for (Asset asset : assets) {

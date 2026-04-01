@@ -161,7 +161,7 @@ public class EmissionPipelineOrchestrator {
         double estimatedLeakRateKgHr = quantifyLeakRate(event, emissionClass);
         if (estimatedLeakRateKgHr > 0) {
             event.quantifyLeakRate(estimatedLeakRateKgHr, null);
-            log.info("  Leak Quantification: {:.3f} kg/hr", estimatedLeakRateKgHr);
+            log.info("  Leak Quantification: {} kg/hr", String.format("%.3f", estimatedLeakRateKgHr));
         }
 
         // ── Stage 6: Emission Reflector Gate ────────────────────────────
@@ -170,8 +170,8 @@ public class EmissionPipelineOrchestrator {
                 gatePassed ? "Confidence exceeds gate threshold"
                           : "Confidence below gate threshold");
 
-        log.info("  Emission Reflector Gate: {} (threshold: {:.2f})",
-                 gatePassed ? "PASSED" : "REJECTED", emissionGateThreshold);
+        log.info("  Emission Reflector Gate: {} (threshold: {})",
+                 gatePassed ? "PASSED" : "REJECTED", String.format("%.2f", emissionGateThreshold));
 
         // ── Stage 6b: Exception Inbox Routing (for rejected events) ─────
         // (Scenario 3 fix) Rejected emission events must not silently disappear.
@@ -281,7 +281,7 @@ public class EmissionPipelineOrchestrator {
         log.info("    - Maintenance Active: {}", maintenanceActive ? "YES" : "NO");
         log.info("    - Turnaround Active: {}", turnaroundActive ? "YES" : "NO");
         log.info("    - Days Since Maintenance: {}", daysSinceLastMaintenance);
-        log.info("    - Historical Baseline: {:.2f} ppm", historicalBaseline);
+        log.info("    - Historical Baseline: {} ppm", String.format("%.2f", historicalBaseline));
     }
 
     /**
@@ -302,8 +302,12 @@ public class EmissionPipelineOrchestrator {
         // At 0 km/h: factor=1.0, thresholds unchanged (500/200 ppm)
         // At 20 km/h: factor=2.0, thresholds halved (250/100 ppm)
         // At 40 km/h: factor=3.0, thresholds divided by 3 (167/67 ppm)
-        double highThreshold = 500.0 / windDilutionFactor;
-        double moderateThreshold = 200.0 / windDilutionFactor;
+        // Apply wind adjustment with 150 ppm floor — at extreme wind speeds the formula
+        // can push thresholds unrealistically low (e.g. 60 km/h → 125 ppm). A 150 ppm
+        // floor ensures we never set the bar below what sensors can reliably distinguish
+        // from background noise on a North Sea platform.
+        double highThreshold = Math.max(150.0, 500.0 / windDilutionFactor);
+        double moderateThreshold = Math.max(150.0, 200.0 / windDilutionFactor);
 
         int corroboratingSensors = 1;
         Double thermal = null;
@@ -319,8 +323,8 @@ public class EmissionPipelineOrchestrator {
             corroboratingSensors = 3;
 
             log.info("  Multi-Modal Fusion: HIGH-CONFIDENCE corroboration (3 sensors) " +
-                     "[wind-adjusted threshold: {:.0f} ppm, wind: {:.0f} km/h]",
-                     highThreshold, windSpeedKmh);
+                     "[wind-adjusted threshold: {} ppm, wind: {} km/h]",
+                     String.format("%.0f", highThreshold), String.format("%.0f", windSpeedKmh));
         } else if (event.getRawReading() > moderateThreshold) {
             thermal = 35.0;
             thermalDelta = 5.0;
@@ -329,12 +333,12 @@ public class EmissionPipelineOrchestrator {
             corroboratingSensors = 2;
 
             log.info("  Multi-Modal Fusion: MODERATE corroboration (2 sensors) " +
-                     "[wind-adjusted threshold: {:.0f} ppm, wind: {:.0f} km/h]",
-                     moderateThreshold, windSpeedKmh);
+                     "[wind-adjusted threshold: {} ppm, wind: {} km/h]",
+                     String.format("%.0f", moderateThreshold), String.format("%.0f", windSpeedKmh));
         } else {
             log.info("  Multi-Modal Fusion: PRIMARY sensor only " +
-                     "[reading {:.0f} ppm below wind-adjusted threshold {:.0f} ppm]",
-                     event.getRawReading(), moderateThreshold);
+                     "[reading {} ppm below wind-adjusted threshold {} ppm]",
+                     String.format("%.0f", event.getRawReading()), String.format("%.0f", moderateThreshold));
         }
 
         if (thermal != null) {
@@ -420,10 +424,30 @@ public class EmissionPipelineOrchestrator {
 
         double leakRateKgHr = (basePpm / 100.0) * equipFactor * windFactor * gasTypeFactor;
 
-        log.info("  Leak Quantification: {:.3f} kg/hr [gas: {}, equipFactor: {}, windFactor: {:.2f}]",
-                leakRateKgHr, gasTypeLabel, equipFactor, windFactor);
+        log.info("  Leak Quantification: {} kg/hr [gas: {}, equipFactor: {}, windFactor: {}]",
+                String.format("%.3f", leakRateKgHr), gasTypeLabel, equipFactor, String.format("%.2f", windFactor));
 
-        return Math.max(0.01, leakRateKgHr);
+        // ── EN 15446 OGI Trigger ──────────────────────────────────────────
+        // The screening estimate above is a correlation-based approximation (per EPA
+        // Method 21). EU 2024/1787 and EN 15446 require that confirmed fugitive leaks
+        // undergo a detailed Optical Gas Imaging (OGI) survey for accurate quantification.
+        // We flag the event for OGI follow-up when:
+        //   - Leak rate exceeds 0.5 kg/hr (material leak per LDAR threshold), OR
+        //   - Multi-modal corroboration confirms the leak (3 sensors agree)
+        // The OGI flag feeds into the remediation action and compliance record.
+        double finalRate = Math.max(0.01, leakRateKgHr);
+        if (finalRate > 0.5 || event.getCorroboratingSensors() >= 3) {
+            event.setOgiSurveyRequired(true);
+            log.info("  EN 15446 OGI Survey: REQUIRED — screening rate {} kg/hr exceeds LDAR threshold " +
+                     "or multi-sensor confirmation (sensors: {}). Confirmed leak quantification per EN 15446.",
+                     String.format("%.3f", finalRate), event.getCorroboratingSensors());
+        } else {
+            event.setOgiSurveyRequired(false);
+            log.info("  EN 15446 OGI Survey: Not required — screening rate {} kg/hr within routine monitoring range.",
+                     String.format("%.3f", finalRate));
+        }
+
+        return finalRate;
     }
 
     /**
@@ -552,9 +576,9 @@ public class EmissionPipelineOrchestrator {
             log.info("  EU 2024/1787 Compliance Record Generated:");
             log.info("    - Event ID: {}", event.getId());
             log.info("    - Classification: {}", event.getClassification());
-            log.info("    - Confidence: {:.3f}", event.getConfidence());
-            log.info("    - Leak Rate: {:.3f} kg/hr",
-                     event.getEstimatedLeakRateKgHr() != null ? event.getEstimatedLeakRateKgHr() : 0.0);
+            log.info("    - Confidence: {}", String.format("%.3f", event.getConfidence()));
+            log.info("    - Leak Rate: {} kg/hr",
+                     String.format("%.3f", event.getEstimatedLeakRateKgHr() != null ? event.getEstimatedLeakRateKgHr() : 0.0));
             log.info("    - Location: {}", event.getLocationArea());
             log.info("    - Equipment: {}", event.getEquipmentTag());
             log.info("    - Compliance Status: {}", event.getComplianceStatus());

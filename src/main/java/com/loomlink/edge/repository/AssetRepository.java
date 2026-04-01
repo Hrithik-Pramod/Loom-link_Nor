@@ -30,4 +30,8 @@ public interface AssetRepository extends JpaRepository<Asset, UUID> {
     Optional<Asset> findByRedundancyPartnerTag(String partnerTag);
 
     List<Asset> findByEquipmentClass(EquipmentClass equipmentClass);
+
+    /** Find assets in a facility area (partial match on functional location). */
+    @Query("SELECT a FROM Asset a WHERE LOWER(a.functionalLocation) LIKE LOWER(CONCAT('%', :area, '%'))")
+    List<Asset> findByFacilityArea(@Param("area") String area);
 }
